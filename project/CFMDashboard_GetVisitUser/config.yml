@@ -1,0 +1,20 @@
+wf:
+  name: ExtractBigqueryImportPuredata
+  env: Production
+bq:
+  dataset_name: temp
+  table_name: CFMDashboard_GetVisitUser_Temp
+  destination: gs://stk-bigquery-export/GetVisitUser_*
+  query: queries/GetVisitUser
+
+embulk:
+  file_path: /tmp/embulk/cfmdashboard_getvisituser
+  file_prefix: CFMDashboard_GetVisitUser_Temp_
+  out_file: CFMDashboard_GetVisitUser.csv
+  key_file_path: /var/lib/digdag/.credential/gcpcredential.json
+
+slack:
+  webhook: https://hooks.slack.com/services/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
+  channel: '#cfm_science_team'
+  username: digdag
+  icon_emoji: ghost

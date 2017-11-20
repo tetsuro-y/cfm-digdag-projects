@@ -1,0 +1,68 @@
+timezone: Asia/Tokyo
+
+_export:
+  plugin:
+    repositories:
+      - https://jitpack.io
+    dependencies:
+      - com.github.szyn:digdag-slack:0.1.2
+  # Set Reqired params
+  webhook_url: ${slack.webhook}
+  # Set Option params
+  workflow_name: ${wf.name}
+  ENV: ${wf.env}
+
+_error:
+  slack>: notification/danger-template.yml
+
++start:
+  echo>: start ${moment(session_time).utc().format('YYYY-MM-DD HH:mm:ss Z')}
+
++repeat:
+  loop>: 7
+  _do:
+    +pre_delete:
+      bq_ddl>:
+      delete_tables:
+        - ${bq.dataset_name}.${bq.table_name}${i}
+
+    +create_select:
+      bq>: ${bq.query}${i}.sql
+      use_legacy_sql: true
+      allow_large_results: True
+      dataset: ${bq.dataset_name}
+      destination_table: ${bq.table_name}${i}
+
+    +extract_file:
+      bq_extract>: ${bq.dataset_name}.${bq.table_name}${i}
+      destination: ${bq.destination}${i}.csv.gz
+      compression: GZIP
+      destination_format: CSV
+
+    +post_delete:
+      bq_ddl>:
+      delete_tables:
+        - ${bq.dataset_name}.${bq.table_name}${i}
+
++download_file:
+  +prepare_dir:
+    sh>: mkdir -p ${embulk.file_path}
+
+  +download_local:
+    embulk>: embulk/gcs_guessed.yml
+
+  +merge_file:
+    sh>: cat ${embulk.file_path}/${embulk.file_prefix}* > ${embulk.file_path}/${embulk.out_file} && rm -r ${embulk.file_path}/${embulk.file_prefix}*
+
++insert_puredata:
+  +load_sql:
+    sh>: java -cp /var/lib/digdag/puredata/nzExecuteSql.jar jp.stk.cfm.ExecuteSqls queries/DWH /var/lib/digdag/puredata/dbconnection.properties
+
+  +remove_file:
+    sh>: rm -rf ${embulk.file_path}
+
++teardown:
+  echo>: finish ${moment(session_time).utc().format('YYYY-MM-DD HH:mm:ss Z')}
+  _check:
+    slack>: notification/good-template.yml
+
