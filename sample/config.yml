@@ -10,7 +10,7 @@ bq:
 embulk:
   file_path: /tmp/embulk/digdag_export_sample
   file_prefix: digdag_export_sample_
-  out_file: digdag_export_sample_loadfile.csv
+  out_file: loadfile_digdag_export_sample.csv # これはfile_prefixと被らないようにしないと消えちゃう
   key_file_path: /var/lib/digdag/.credential/gcpcredential.json
 
 slack:
