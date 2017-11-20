@@ -13,7 +13,7 @@ _export:
   ENV: ${wf.env}
 
 _error:
-  slack>: /var/lib/digdag/notification/danger-template.yml
+  slack>: notification/danger-template.yml
 
 +start:
   echo>: start ${moment(session_time).utc().format('YYYY-MM-DD HH:mm:ss Z')}
@@ -66,5 +66,5 @@ _error:
 +teardown:
   echo>: finish ${moment(session_time).utc().format('YYYY-MM-DD HH:mm:ss Z')}
   _check:
-    slack>: /var/lib/digdag/notification/good-template.yml
+    slack>: notification/good-template.yml
 
