@@ -15,7 +15,7 @@ CREATE TEMP TABLE TAT_SAITO_LOADTEST_20171010_TMP AS
     ,ACCESSDT
   from
   -- TODO 下記のパスを適度最適な場所に変更する
-  EXTERNAL '/tmp/embulk/digdag_export_sample/digdag_export_sample_loadfile.csv'
+  EXTERNAL '/tmp/embulk/digdag_export_sample/loadfile_digdag_export_sample.csv'
   (
     FULLVISITORID VARCHAR(30)
     ,MEMBERID NUMERIC(19,4)
