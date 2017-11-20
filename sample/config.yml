@@ -1,0 +1,20 @@
+wf:
+  name: ExtractBigqueryImportPuredata
+  env: Production
+bq:
+  dataset_name: temp
+  table_name: digdag_export_sample
+  destination: gs://stk-bigquery-export/digdag_export_sample_*.csv.gz
+  query: queries/usermerge.sql
+
+embulk:
+  file_path: /tmp/embulk/digdag_export_sample
+  file_prefix: digdag_export_sample_
+  out_file: digdag_export_sample_loadfile.csv
+  key_file_path: /var/lib/digdag/.credential/gcpcredential.json
+
+slack:
+  webhook: https://hooks.slack.com/services/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
+  channel: '#cfm_science_team'
+  username: digdag
+  icon_emoji: ghost
