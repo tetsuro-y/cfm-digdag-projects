@@ -48,7 +48,7 @@ FROM
             ,DATE
             ,trafficSource.campaign
         FROM
-            TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(CURRENT_DATE(), -7, 'DAY'), DATE_ADD(CURRENT_DATE(), -1, 'DAY'))
+            TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
         WHERE
             trafficsource.medium = 'mailmag'
             AND LENGTH(trafficsource.source) = 4
@@ -58,6 +58,7 @@ FROM
     LEFT OUTER JOIN [durable-binder-547:ZZ_CFM.TAT_PARAMETERMAPPING] AS MAPPING_TABLE ON MM_SOURCE = PM_PARAMETER
     WHERE
         MM_DEVICE IN ('PC' , 'MO', 'pc', 'mo')
+        AND DATEDIFF(DATE, MM_SENDDT) >= 0
         AND DATEDIFF(DATE, MM_SENDDT) <= 7--配信から7日以内の流入に絞る
     GROUP EACH BY
         VC_VISITTIME

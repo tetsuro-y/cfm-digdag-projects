@@ -1,11 +1,15 @@
 wf:
   name: ExtractBigqueryImportPuredata
   env: Production
+
 bq:
   dataset_name: temp
   table_name: CFMDashboard_GetVisitUser_Temp
   destination: gs://stk-bigquery-export/GetVisitUser_*
-  query: queries/GetVisitUser
+  query: queries/BQ/GetVisitUser
+  # query: queries/sample.sql
+  start_dt:
+  end_dt:
 
 embulk:
   file_path: /tmp/embulk/cfmdashboard_getvisituser

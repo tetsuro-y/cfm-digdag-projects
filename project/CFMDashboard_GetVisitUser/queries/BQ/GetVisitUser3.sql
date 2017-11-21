@@ -41,7 +41,7 @@ FROM
             ,totals.totalTransactionRevenue AS MNU_REVENUE
             ,DATE
         FROM
-            TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(CURRENT_DATE(), -7, 'DAY'), DATE_ADD(CURRENT_DATE(), -1, 'DAY'))
+            TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
         WHERE
             trafficSource.medium = 'mailmag'
             AND trafficSource.source = 'ni_u_m'
@@ -50,6 +50,7 @@ FROM
     WHERE
         MNU_DEVICE IN ('PC' , 'MO', 'pc', 'mo')
         AND REGEXP_MATCH(STRING(MNU_EMAILID),'^[0-9]{1,}')
+        AND DATEDIFF(DATE, MNU_SENDDT) >= 0
         AND DATEDIFF(DATE, MNU_SENDDT) <= 7--配信から7日以内の流入に絞る
     GROUP EACH BY
         VC_VISITTIME

@@ -18,51 +18,55 @@ _error:
 +start:
   echo>: start ${moment(session_time).utc().format('YYYY-MM-DD HH:mm:ss Z')}
 
-+repeat:
-  loop>: 7
-  _do:
-    +pre_delete:
-      bq_ddl>:
-      delete_tables:
-        - ${bq.dataset_name}.${bq.table_name}${i}
++get_bqdata:
+  _export:
+      ga_start_date: "${bq.start_dt ? bq.start_dt : moment(session_date).subtract(1, 'days').format('YYYY-MM-DD')}"
+      ga_end_date: "${bq.end_dt ? bq.end_dt : moment(session_date).subtract(1, 'days').format('YYYY-MM-DD')}"
 
-    +create_select:
-      bq>: ${bq.query}${i}.sql
-      use_legacy_sql: true
-      allow_large_results: True
-      dataset: ${bq.dataset_name}
-      destination_table: ${bq.table_name}${i}
+  +repeat:
+    loop>: 7
+    _do:
+      +pre_delete:
+        bq_ddl>:
+        delete_tables:
+          - ${bq.dataset_name}.${bq.table_name}${i}
 
-    +extract_file:
-      bq_extract>: ${bq.dataset_name}.${bq.table_name}${i}
-      destination: ${bq.destination}${i}.csv.gz
-      compression: GZIP
-      destination_format: CSV
+      +create_select:
+        bq>: ${bq.query}${i}.sql
+        use_legacy_sql: true
+        allow_large_results: True
+        dataset: ${bq.dataset_name}
+        destination_table: ${bq.table_name}${i}
 
-    +post_delete:
-      bq_ddl>:
-      delete_tables:
-        - ${bq.dataset_name}.${bq.table_name}${i}
+      +extract_file:
+        bq_extract>: ${bq.dataset_name}.${bq.table_name}${i}
+        destination: ${bq.destination}${i}.csv.gz
+        compression: GZIP
+        destination_format: CSV
 
-+download_file:
-  +prepare_dir:
-    sh>: mkdir -p ${embulk.file_path}
+      +post_delete:
+        bq_ddl>:
+        delete_tables:
+          - ${bq.dataset_name}.${bq.table_name}${i}
 
-  +download_local:
-    embulk>: embulk/gcs_guessed.yml
+  +download_file:
+    +prepare_dir:
+      sh>: mkdir -p ${embulk.file_path}
 
-  +merge_file:
-    sh>: cat ${embulk.file_path}/${embulk.file_prefix}* > ${embulk.file_path}/${embulk.out_file} && rm -r ${embulk.file_path}/${embulk.file_prefix}*
+    +download_local:
+      embulk>: embulk/gcs_guessed.yml
 
-+insert_puredata:
-  +load_sql:
-    sh>: java -cp /var/lib/digdag/puredata/nzExecuteSql.jar jp.stk.cfm.ExecuteSqls queries/DWH /var/lib/digdag/puredata/dbconnection.properties
+    +merge_file:
+      sh>: cat ${embulk.file_path}/${embulk.file_prefix}* > ${embulk.file_path}/${embulk.out_file} && rm -r ${embulk.file_path}/${embulk.file_prefix}*
 
-  +remove_file:
-    sh>: rm -rf ${embulk.file_path}
+  +insert_puredata:
+    +load_sql:
+      sh>: java -cp /var/lib/digdag/puredata/nzExecuteSql.jar jp.stk.cfm.ExecuteSqls queries/DWH /var/lib/digdag/puredata/dbconnection.properties
 
-+teardown:
-  echo>: finish ${moment(session_time).utc().format('YYYY-MM-DD HH:mm:ss Z')}
-  _check:
-    slack>: notification/good-template.yml
+    +remove_file:
+      sh>: rm -rf ${embulk.file_path}
 
+  +teardown:
+    echo>: finish ${moment(session_time).utc().format('YYYY-MM-DD HH:mm:ss Z')}
+    _check:
+      slack>: notification/good-template.yml

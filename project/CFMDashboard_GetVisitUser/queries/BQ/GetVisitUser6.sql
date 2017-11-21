@@ -30,7 +30,7 @@ FROM
             ,FULLVISITORID AS SNW_FULLVISITORID
             ,totals.totalTransactionRevenue AS SNW_REVENUE
         FROM
-            TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(CURRENT_DATE(), -7, 'DAY'), DATE_ADD(CURRENT_DATE(), -1, 'DAY'))
+            TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
         WHERE
             hits.eventInfo.eventCategory = 'notice'
             --不審なデータを除外するため
@@ -79,7 +79,7 @@ FROM
                 ,1 AS SNA_OS
                 ,FULLVISITORID AS SNA_FULLVISITORID
             FROM
-                TABLE_DATE_RANGE([90402834.ga_sessions_],DATE_ADD(CURRENT_DATE(), -7, 'DAY'), DATE_ADD(CURRENT_DATE(), -1, 'DAY'))
+                TABLE_DATE_RANGE([90402834.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
             WHERE
                 hits.eventInfo.eventCategory = 'notice'
             GROUP EACH BY
@@ -93,7 +93,7 @@ FROM
                 ,2 AS SNA_OS
                 ,FULLVISITORID AS SNA_FULLVISITORID
             FROM
-                TABLE_DATE_RANGE([90303901.ga_sessions_],DATE_ADD(CURRENT_DATE(), -7, 'DAY'), DATE_ADD(CURRENT_DATE(), -1, 'DAY'))
+                TABLE_DATE_RANGE([90303901.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
             WHERE
                 hits.eventInfo.eventCategory = 'notice'
             GROUP EACH BY

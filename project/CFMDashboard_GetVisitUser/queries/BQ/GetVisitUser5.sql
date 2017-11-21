@@ -58,14 +58,15 @@ FROM
             ,totals.totalTransactionRevenue AS PW_REVENUE
             ,DATE
         FROM
-            TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(CURRENT_DATE(), -7, 'DAY'), DATE_ADD(CURRENT_DATE(), -1, 'DAY'))
+            TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
         WHERE
             trafficSource.source IN ('ios','android')
             AND REGEXP_MATCH(trafficSource.campaign, r'PUSH_(M|S|N|P)\d{3}.*')
     )AS PUSH_WEBVIEW/*PREFIX = PW*/
     LEFT OUTER JOIN [durable-binder-547:ZZ_CFM.TAT_PARAMETERMAPPING] AS MAPPING_TABLE ON PW_CAMPAIGNID = PM_PARAMETER
     WHERE
-        DATEDIFF(DATE, PW_SENDDT) <= 7--配信から7日以内の流入に絞る
+        DATEDIFF(DATE, PW_SENDDT) >= 0
+        AND DATEDIFF(DATE, PW_SENDDT) <= 7--配信から7日以内の流入に絞る
     GROUP EACH BY
         VC_VISITTIME
         ,VC_SENDDT
@@ -107,7 +108,7 @@ FROM
                 ,FULLVISITORID AS PMN_FULLVISITORID
                 ,DATE
             FROM
-                TABLE_DATE_RANGE([90402834.ga_sessions_],DATE_ADD(CURRENT_DATE(), -7, 'DAY'), DATE_ADD(CURRENT_DATE(), -1, 'DAY'))
+                TABLE_DATE_RANGE([90402834.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
             WHERE
                 REGEXP_MATCH(hits.appInfo.screenName,'^.*push_type=PUSH_S')),
             --Android
@@ -119,13 +120,14 @@ FROM
                 ,FULLVISITORID AS PMN_FULLVISITORID
                 ,DATE
             FROM
-                TABLE_DATE_RANGE([90303901.ga_sessions_],DATE_ADD(CURRENT_DATE(), -7, 'DAY'), DATE_ADD(CURRENT_DATE(), -1, 'DAY'))
+                TABLE_DATE_RANGE([90303901.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
             WHERE
                 REGEXP_MATCH(hits.appInfo.screenName,'^.*push_type=PUSH_S'))
     ) AS VISIT
     LEFT OUTER JOIN [durable-binder-547:ZZ_CFM.TAT_PARAMETERMAPPING] AS MAPPING_TABLE ON PMN_CAMPAIGNID = PM_PARAMETER
     WHERE
-        DATEDIFF(DATE, PMN_SENDDT) <= 7--配信から7日以内の流入に絞る
+        DATEDIFF(DATE, PMN_SENDDT) >= 0
+        AND DATEDIFF(DATE, PMN_SENDDT) <= 7--配信から7日以内の流入に絞る
     GROUP EACH BY
         VC_VISITTIME
         ,VC_SENDDT
@@ -167,7 +169,7 @@ FROM
                 ,FULLVISITORID AS PN_FULLVISITORID
                 ,DATE
             FROM
-                TABLE_DATE_RANGE([90402834.ga_sessions_],DATE_ADD(CURRENT_DATE(), -7, 'DAY'), DATE_ADD(CURRENT_DATE(), -1, 'DAY'))
+                TABLE_DATE_RANGE([90402834.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
             WHERE
                 REGEXP_MATCH(hits.appInfo.screenName,'^.*push_type=PUSH_N')),
             --Android
@@ -179,13 +181,14 @@ FROM
                 ,FULLVISITORID AS PN_FULLVISITORID
                 ,DATE
             FROM
-                TABLE_DATE_RANGE([90303901.ga_sessions_],DATE_ADD(CURRENT_DATE(), -7, 'DAY'), DATE_ADD(CURRENT_DATE(), -1, 'DAY'))
+                TABLE_DATE_RANGE([90303901.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
             WHERE
                 REGEXP_MATCH(hits.appInfo.screenName,'^.*push_type=PUSH_N'))
         ) AS VISIT
         LEFT OUTER JOIN [durable-binder-547:ZZ_CFM.TAT_PARAMETERMAPPING] AS MAPPING_TABLE ON PN_CAMPAIGNID = PM_PARAMETER
     WHERE
-        DATEDIFF(DATE, PN_SENDDT) <= 7--配信から7日以内の流入に絞る
+        DATEDIFF(DATE, PN_SENDDT) >= 0
+        AND DATEDIFF(DATE, PN_SENDDT) <= 7--配信から7日以内の流入に絞る
     GROUP EACH BY
         VC_VISITTIME
         ,VC_SENDDT
@@ -216,7 +219,7 @@ FROM
             ,FULLVISITORID AS PP_FULLVISITORID
             ,DATE
         FROM
-            TABLE_DATE_RANGE([90402834.ga_sessions_],DATE_ADD(CURRENT_DATE(), -7, 'DAY'), DATE_ADD(CURRENT_DATE(), -1, 'DAY'))
+            TABLE_DATE_RANGE([90402834.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
         WHERE
             REGEXP_MATCH(hits.appInfo.screenName,'^.*push_type=PUSH_P')),
         --Android
@@ -228,11 +231,12 @@ FROM
             ,FULLVISITORID AS PP_FULLVISITORID
             ,DATE
         FROM
-            TABLE_DATE_RANGE([90303901.ga_sessions_],DATE_ADD(CURRENT_DATE(), -7, 'DAY'), DATE_ADD(CURRENT_DATE(), -1, 'DAY'))
+            TABLE_DATE_RANGE([90303901.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
         WHERE
             REGEXP_MATCH(hits.appInfo.screenName,'^.*push_type=PUSH_P'))
     WHERE
-        DATEDIFF(DATE, PP_SENDDT) <= 7--配信から7日以内の流入に絞る
+        DATEDIFF(DATE, PP_SENDDT) >= 0
+        AND DATEDIFF(DATE, PP_SENDDT) <= 7--配信から7日以内の流入に絞る
     GROUP EACH BY
         VC_VISITTIME
         ,VC_SENDDT

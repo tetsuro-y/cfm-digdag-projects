@@ -33,14 +33,15 @@ FROM
             ,totals.totalTransactionRevenue AS LM_REVENUE
             ,DATE
         FROM
-            TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(CURRENT_DATE(), -7, 'DAY'), DATE_ADD(CURRENT_DATE(), -1, 'DAY'))
+            TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
         WHERE
             trafficsource.medium = 'line'
             AND trafficSource.source = 'mm_l'
     ) AS LINE_MASS/*PREFIX = LM*/
     LEFT OUTER JOIN [durable-binder-547:ZZ_CFM.TAT_PARAMETERMAPPING] AS MAPPING_TABLE ON LM_SOURCE = PM_PARAMETER
     WHERE
-        DATEDIFF(DATE, LM_SENDDT) <= 7--配信から7日以内の流入に絞る
+        DATEDIFF(DATE, LM_SENDDT) >= 0
+        AND DATEDIFF(DATE, LM_SENDDT) <= 7--配信から7日以内の流入に絞る
     GROUP EACH BY
         VC_VISITTIME
         ,VC_SENDDT
@@ -71,14 +72,15 @@ FROM
             ,totals.totalTransactionRevenue AS LPO_REVENUE
             ,DATE
         FROM
-            TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(CURRENT_DATE(), -7, 'DAY'), DATE_ADD(CURRENT_DATE(), -1, 'DAY'))
+            TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
         WHERE
             trafficsource.medium = 'linepersonal'
             AND LENGTH(trafficSource.campaign) <= 12--2.0はOFFERIDがついていないので
     ) AS LINE_PERSONALIZE_OLD/*PREFIX = LPO*/
     LEFT OUTER JOIN [durable-binder-547:ZZ_CFM.TAT_PARAMETERMAPPING] AS MAPPING_TABLE ON LPO_SOURCE = PM_PARAMETER
     WHERE
-        DATEDIFF(DATE, LPO_SENDDT) <= 7--配信から7日以内の流入に絞る
+        DATEDIFF(DATE, LPO_SENDDT) >= 0
+        AND DATEDIFF(DATE, LPO_SENDDT) <= 7--配信から7日以内の流入に絞る
     GROUP EACH BY
         VC_VISITTIME
         ,VC_SENDDT
@@ -108,12 +110,13 @@ FROM
             ,totals.totalTransactionRevenue AS LPN_REVENUE
             ,DATE
         FROM
-            TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(CURRENT_DATE(), -7, 'DAY'), DATE_ADD(CURRENT_DATE(), -1, 'DAY'))
+            TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
         WHERE
             trafficsource.medium = 'linepersonal'
     ) AS LINE_PERSONALIZE_NEW/*PREFIX = LPN*/
     WHERE
         REGEXP_MATCH(STRING(LPN_OFFERID),'^[0-9]{2,}')
+        AND DATEDIFF(DATE, LPN_SENDDT) >= 0
         AND DATEDIFF(DATE, LPN_SENDDT) <= 7--配信から7日以内の流入に絞る
     GROUP EACH BY
         VC_VISITTIME
@@ -146,14 +149,15 @@ FROM
             ,totals.totalTransactionRevenue AS LT_REVENUE
             ,DATE
         FROM
-            TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(CURRENT_DATE(), -7, 'DAY'), DATE_ADD(CURRENT_DATE(), -1, 'DAY'))
+            TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
         WHERE
             trafficsource.medium = 'line'
             AND trafficSource.source = 'tl_l'
     ) AS LINE_TIMELINE/*PREFIX = LT*/
     LEFT OUTER JOIN [durable-binder-547:ZZ_CFM.TAT_PARAMETERMAPPING] AS MAPPING_TABLE ON LT_SOURCE = PM_PARAMETER
     WHERE
-        DATEDIFF(DATE, LT_SENDDT) <= 7--配信から7日以内の流入に絞る
+        DATEDIFF(DATE, LT_SENDDT) >= 0
+        AND DATEDIFF(DATE, LT_SENDDT) <= 7--配信から7日以内の流入に絞る
     GROUP EACH BY
         VC_VISITTIME
         ,VC_SENDDT
@@ -181,7 +185,7 @@ FROM
             ,FULLVISITORID AS LR_FULLVISITORID
             ,totals.totalTransactionRevenue AS LR_REVENUE
         FROM
-            TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(CURRENT_DATE(), -7, 'DAY'), DATE_ADD(CURRENT_DATE(), -1, 'DAY'))
+            TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
         WHERE
             trafficsource.medium = 'line'
             AND trafficSource.source = 'rm_l'

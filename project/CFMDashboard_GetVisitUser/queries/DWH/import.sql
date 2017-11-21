@@ -1,9 +1,54 @@
 BEGIN;
 
+CREATE TEMP TABLE TAT_VIACHANNEL_VISITUSER_TEST_TEMP
+(
+    VC_VISITTIME TIMESTAMP,
+    VC_SENDDT DATE,
+    VC_CHANNEL BYTEINT,
+    VC_CHANNEL_DETAIL BYTEINT,
+    VC_CAMPAIGNID INTEGER,
+    VC_DEVICE BYTEINT,
+    VC_OS BYTEINT,
+    VC_EMAILID BIGINT,
+    VC_OFFERID BIGINT,
+    VC_FULLVISITORID NVARCHAR(30),
+    VC_TRANSACTIONREVENUE BIGINT
+)
+DISTRIBUTE ON (VC_VISITTIME, VC_CHANNEL, VC_CHANNEL_DETAIL, VC_CAMPAIGNID);
+
+INSERT INTO TAT_VIACHANNEL_VISITUSER_TEST_TEMP
+SELECT
+    VC_VISITTIME
+    ,VC_SENDDT::DATE
+    ,VC_CHANNEL
+    ,VC_CHANNEL_DETAIL
+    ,VC_CAMPAIGNID
+    ,VC_DEVICE
+    ,VC_OS
+    ,VC_EMAILID
+    ,VC_OFFERID
+    ,VC_FULLVISITORID
+    ,VC_TRANSACTIONREVENUE
+FROM
+	EXTERNAL '/tmp/embulk/cfmdashboard_getvisituser/CFMDashboard_GetVisitUser.csv'
+USING (DELIM ',' REMOTESOURCE 'JDBC' LOGDIR '/tmp/embulk/puredata/log'); -- skipRows 1
+
 DELETE FROM TAT_VIACHANNEL_VISITUSER_TEST
 WHERE
-    (VC_VISITTIME >= CURRENT_DATE::TIMESTAMP - INTERVAL'7 DAYS'
-    AND VC_VISITTIME < CURRENT_DATE::TIMESTAMP)
+    EXISTS (
+        SELECT
+            1
+        FROM
+            TAT_VIACHANNEL_VISITUSER_TEST_TEMP AS TEMP
+            INNER JOIN TAT_VIACHANNEL_VISITUSER_TEST AS PD ON TEMP.VC_VISITTIME = PD.VC_VISITTIME
+                                                            AND TEMP.VC_SENDDT = PD.VC_SENDDT
+                                                            AND TEMP.VC_CHANNEL = PD.VC_CHANNEL
+                                                            AND TEMP.VC_CHANNEL_DETAIL = PD.VC_CHANNEL_DETAIL
+                                                            AND TEMP.VC_CAMPAIGNID = PD.VC_CAMPAIGNID
+                                                            AND TEMP.VC_DEVICE = PD.VC_DEVICE
+                                                            AND TEMP.VC_OFFERID = PD.VC_OFFERID
+                                                            AND TEMP.VC_FULLVISITORID = PD.VC_FULLVISITORID
+    )
     OR VC_VISITTIME < CURRENT_DATE - INTERVAL'2 YEARS'
 ;
 INSERT INTO TAT_VIACHANNEL_VISITUSER_TEST
@@ -20,8 +65,7 @@ SELECT
     ,VC_FULLVISITORID
     ,VC_TRANSACTIONREVENUE
 FROM
-	EXTERNAL '/tmp/embulk/cfmdashboard_getvisituser/CFMDashboard_GetVisitUser.csv'
-USING (DELIM ',' REMOTESOURCE 'JDBC' LOGDIR '/tmp/embulk/puredata/log'); -- skipRows 1
+	TAT_VIACHANNEL_VISITUSER_TEST_TEMP
 ;
 
 COMMIT;

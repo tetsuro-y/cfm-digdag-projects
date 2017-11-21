@@ -39,7 +39,7 @@ FROM
             ,totals.totalTransactionRevenue AS MPO_REVENUE
             ,DATE
         FROM
-            TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(CURRENT_DATE(), -7, 'DAY'), DATE_ADD(CURRENT_DATE(), -1, 'DAY'))
+            TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
         WHERE
             trafficsource.medium = 'mailpersonal'
     ) AS MAIL_PERSONALIZE_OLD/*PREFIX = MPO*/
@@ -47,6 +47,7 @@ FROM
     WHERE
         MPO_DEVICE IN ('PC' , 'MO', 'pc', 'mo')
         AND REGEXP_MATCH(MPO_SOURCE,'^C[0-9]{9}')--Cから始まるキャンペーンコード
+        AND DATEDIFF(DATE, MPO_SENDDT) >= 0
         AND DATEDIFF(DATE, MPO_SENDDT) <= 7--配信から7日以内の流入に絞る
     GROUP EACH BY
         VC_VISITTIME
@@ -80,13 +81,14 @@ FROM
         ,totals.totalTransactionRevenue AS MPN_REVENUE
         ,DATE
     FROM
-        TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(CURRENT_DATE(), -7, 'DAY'), DATE_ADD(CURRENT_DATE(), -1, 'DAY'))
+        TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
     WHERE
         trafficsource.medium = 'mailpersonal'
     ) AS MAIL_PERSONALIZE_NEW/*PREFIX = MPN*/
     WHERE
         MPN_DEVICE IN ('1','2')
         AND REGEXP_MATCH(STRING(MPN_OFFERID),'^[0-9]{2,}')
+        AND DATEDIFF(DATE, MPN_SENDDT) >= 0
         AND DATEDIFF(DATE, MPN_SENDDT) <= 7--配信から7日以内の流入に絞る
     GROUP EACH BY
         VC_VISITTIME
@@ -120,14 +122,15 @@ FROM
             ,totals.totalTransactionRevenue AS MT_REVENUE
             ,DATE
         FROM
-            TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(CURRENT_DATE(), -7, 'DAY'), DATE_ADD(CURRENT_DATE(), -1, 'DAY'))
+            TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
         WHERE
             trafficsource.medium = 'mailmag'
             AND trafficsource.source IN ('sd_m', 'rc_m', 'o1_m', 'o2_m', 'o3_m')
     ) AS MAIL_TRANSACTION/*PREFIX = MT*/
     LEFT OUTER JOIN [durable-binder-547:ZZ_CFM.TAT_PARAMETERMAPPING] AS MAPPING_TABLE ON MT_SOURCE = PM_PARAMETER
     WHERE
-        DATEDIFF(DATE, MT_SENDDT) <= 7--配信から7日以内の流入に絞る
+        DATEDIFF(DATE, MT_SENDDT) >= 0
+        AND DATEDIFF(DATE, MT_SENDDT) <= 7--配信から7日以内の流入に絞る
     GROUP EACH BY
         VC_VISITTIME
         ,VC_SENDDT
