@@ -11,6 +11,9 @@ attachments:
   - pretext
   - fields
   fields:
+  - title: Session
+    value: "http://10.201.161.10:65432/sessions/${session_id}"
+    short: false
   - title: Task Name
     value: "${task_name}"
     short: false
