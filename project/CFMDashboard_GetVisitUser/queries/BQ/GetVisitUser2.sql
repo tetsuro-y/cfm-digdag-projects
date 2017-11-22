@@ -18,40 +18,37 @@ FROM
         ,MNT_SENDDT AS VC_SENDDT
         ,PM_CHANNEL AS VC_CHANNEL
         ,PM_CHANNEL_DETAIL AS VC_CHANNEL_DETAIL
+        ,PM_MAPPINGID AS VC_CAMPAIGNID
         ,CASE
-            WHEN PM_PARAMETER IS NOT NULL THEN PM_MAPPINGID
-            ELSE NULL
-        END AS VC_CAMPAIGNID
-        ,CASE
-            WHEN MNT_DEVICE IN ('MO', 'mo') THEN 1
-            WHEN MNT_DEVICE IN ('PC', 'pc') THEN 2
+            WHEN UPPER(MNT_DEVICE)  = 'MO' THEN 1
+            WHEN UPPER(MNT_DEVICE)  = 'PC' THEN 2
             ELSE NULL
          END AS VC_DEVICE
-        ,MNT_EMAILID AS VC_EMAILID
+        ,INTEGER(MNT_EMAILID) AS VC_EMAILID--新着メルマガは過去EMAILIDがついていなかった時期があるためNULLを除く条件は入れられない
         ,MNT_FULLVISITORID AS VC_FULLVISITORID
         ,SUM(INTEGER(NVL(MNT_REVENUE/1000000, 0))) AS VC_REVENUE
     FROM (
         SELECT
-            FORMAT_UTC_USEC(visitStartTime*  1000000+ 32400000000) AS MNT_VISITTIME
-            ,LEFT(trafficSource.campaign,8) AS MNT_SENDDT
-            ,trafficSource.source AS MNT_SOURCE
-            ,NTH(2,SPLIT(trafficSource.campaign, '_')) AS MNT_DEVICE
-            ,INTEGER(SUBSTR(trafficSource.campaign,13,LENGTH(trafficSource.campaign)-(LENGTH(REGEXP_REPLACE(trafficSource.campaign,r'^\d+',''))+12))) AS MNT_EMAILID
+            FORMAT_UTC_USEC(VISITSTARTTIME * 1000000 + 32400000000) AS MNT_VISITTIME
+            ,LEFT(TRAFFICSOURCE.CAMPAIGN, 8) AS MNT_SENDDT
+            ,TRAFFICSOURCE.SOURCE AS MNT_SOURCE
+            ,NTH(2, SPLIT(TRAFFICSOURCE.CAMPAIGN, '_')) AS MNT_DEVICE--この段階でUPPERをかけるとエラーになる
+            ,SUBSTR(NTH(1, SPLIT(TRAFFICSOURCE.CAMPAIGN, '_')), 13) AS MNT_EMAILID
             ,FULLVISITORID AS MNT_FULLVISITORID
-            ,totals.totalTransactionRevenue AS MNT_REVENUE
-            ,DATE
+            ,TOTALS.TOTALTRANSACTIONREVENUE AS MNT_REVENUE
+            ,DATE AS MNT_DATE
         FROM
-            TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
+            TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('2017-11-21'), TIMESTAMP('2017-11-21'))--TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
         WHERE
-            trafficSource.medium = 'mailmag'
-            AND trafficSource.source = 'ni_m'
+            TRAFFICSOURCE.MEDIUM = 'mailmag'
+            AND TRAFFICSOURCE.SOURCE = 'ni_m'--CHANNELIDとCHANNELDETAILIDではTOWN/USEDの区別がつかないためベタ書き
     ) AS MAIL_NEWARRIVAL_TOWN/*PREFIX = MNT*/
-    LEFT OUTER JOIN [durable-binder-547:ZZ_CFM.TAT_PARAMETERMAPPING] AS MAPPING_TABLE ON MNT_SOURCE = PM_PARAMETER
+    INNER JOIN [durable-binder-547:ZZ_CFM.TAT_PARAMETERMAPPING] AS MAPPING_TABLE ON MNT_SOURCE = PM_PARAMETER
     WHERE
-        MNT_DEVICE IN ('PC' , 'MO', 'pc', 'mo')
-        AND REGEXP_MATCH(STRING(MNT_EMAILID),'^[0-9]{1,}')
-        AND DATEDIFF(DATE, MNT_SENDDT) >= 0
-        AND DATEDIFF(DATE, MNT_SENDDT) <= 7--配信から7日以内の流入に絞る
+        UPPER(MNT_DEVICE) IN ('PC', 'MO')
+        AND REGEXP_MATCH(MNT_EMAILID, R'^[0-9]{1,}')
+        AND DATEDIFF(MNT_DATE, MNT_SENDDT) >= 0
+        AND DATEDIFF(MNT_DATE, MNT_SENDDT) <= 7--配信から7日以内の流入に絞る
     GROUP EACH BY
         VC_VISITTIME
         ,VC_SENDDT

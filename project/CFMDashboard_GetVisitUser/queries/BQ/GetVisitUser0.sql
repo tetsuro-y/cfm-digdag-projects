@@ -18,30 +18,26 @@ FROM
         ,LM_SENDDT AS VC_SENDDT
         ,PM_CHANNEL AS VC_CHANNEL
         ,PM_CHANNEL_DETAIL AS VC_CHANNEL_DETAIL
-        ,CASE
-            WHEN PM_PARAMETER IS NOT NULL THEN PM_MAPPINGID
-            ELSE NULL
-        END AS VC_CAMPAIGNID
+        ,PM_MAPPINGID AS VC_CAMPAIGNID
         ,LM_FULLVISITORID AS VC_FULLVISITORID
         ,SUM(INTEGER(NVL(LM_REVENUE/1000000, 0))) AS VC_REVENUE
     FROM (
         SELECT
-            FORMAT_UTC_USEC(visitStartTime*  1000000+ 32400000000) AS LM_VISITTIME
-            ,LEFT(trafficSource.campaign,8) AS LM_SENDDT
-            ,trafficSource.source AS LM_SOURCE
+            FORMAT_UTC_USEC(VISITSTARTTIME * 1000000 + 32400000000) AS LM_VISITTIME
+            ,LEFT(TRAFFICSOURCE.CAMPAIGN, 8) AS LM_SENDDT
+            ,TRAFFICSOURCE.SOURCE AS LM_SOURCE
             ,FULLVISITORID AS LM_FULLVISITORID
-            ,totals.totalTransactionRevenue AS LM_REVENUE
-            ,DATE
+            ,TOTALS.TOTALTRANSACTIONREVENUE AS LM_REVENUE
+            ,DATE AS LM_DATE
         FROM
-            TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
-        WHERE
-            trafficsource.medium = 'line'
-            AND trafficSource.source = 'mm_l'
+            TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('2017-11-21'), TIMESTAMP('2017-11-21'))--TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
     ) AS LINE_MASS/*PREFIX = LM*/
-    LEFT OUTER JOIN [durable-binder-547:ZZ_CFM.TAT_PARAMETERMAPPING] AS MAPPING_TABLE ON LM_SOURCE = PM_PARAMETER
+    INNER JOIN [durable-binder-547:ZZ_CFM.TAT_PARAMETERMAPPING] AS MAPPING_TABLE ON LM_SOURCE = PM_PARAMETER
     WHERE
-        DATEDIFF(DATE, LM_SENDDT) >= 0
-        AND DATEDIFF(DATE, LM_SENDDT) <= 7--配信から7日以内の流入に絞る
+        DATEDIFF(LM_DATE, LM_SENDDT) >= 0
+        AND DATEDIFF(LM_DATE, LM_SENDDT) <= 7--配信から7日以内の流入に絞る
+        AND PM_CHANNEL = 2--LINE
+        AND PM_CHANNEL_DETAIL = 2--マス
     GROUP EACH BY
         VC_VISITTIME
         ,VC_SENDDT
@@ -57,30 +53,27 @@ FROM
         ,LPO_SENDDT AS VC_SENDDT
         ,PM_CHANNEL AS VC_CHANNEL
         ,PM_CHANNEL_DETAIL AS VC_CHANNEL_DETAIL
-        ,CASE
-            WHEN PM_PARAMETER IS NOT NULL THEN PM_MAPPINGID
-            ELSE NULL
-        END AS VC_CAMPAIGNID
+        ,PM_MAPPINGID AS VC_CAMPAIGNID
         ,LPO_FULLVISITORID AS VC_FULLVISITORID
         ,SUM(INTEGER(NVL(LPO_REVENUE/1000000, 0))) AS VC_REVENUE
     FROM (
         SELECT
-            FORMAT_UTC_USEC(visitStartTime*  1000000+ 32400000000) AS LPO_VISITTIME
-            ,LEFT(trafficSource.campaign,8) AS LPO_SENDDT
-            ,NTH(3,SPLIT(trafficSource.source, '_')) AS LPO_SOURCE
+            FORMAT_UTC_USEC(VISITSTARTTIME * 1000000 + 32400000000) AS LPO_VISITTIME
+            ,LEFT(TRAFFICSOURCE.CAMPAIGN, 8) AS LPO_SENDDT
+            ,NTH(3, SPLIT(TRAFFICSOURCE.SOURCE, '_')) AS LPO_SOURCE
             ,FULLVISITORID AS LPO_FULLVISITORID
-            ,totals.totalTransactionRevenue AS LPO_REVENUE
-            ,DATE
+            ,TOTALS.TOTALTRANSACTIONREVENUE AS LPO_REVENUE
+            ,DATE AS LPO_DATE
         FROM
-            TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
+            TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('2017-11-21'), TIMESTAMP('2017-11-21'))--TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
         WHERE
-            trafficsource.medium = 'linepersonal'
-            AND LENGTH(trafficSource.campaign) <= 12--2.0はOFFERIDがついていないので
+            TRAFFICSOURCE.MEDIUM = 'linepersonal'
+            AND LENGTH(TRAFFICSOURCE.CAMPAIGN) <= 12--2.0はOFFERIDがついていないので
     ) AS LINE_PERSONALIZE_OLD/*PREFIX = LPO*/
-    LEFT OUTER JOIN [durable-binder-547:ZZ_CFM.TAT_PARAMETERMAPPING] AS MAPPING_TABLE ON LPO_SOURCE = PM_PARAMETER
+    INNER JOIN [durable-binder-547:ZZ_CFM.TAT_PARAMETERMAPPING] AS MAPPING_TABLE ON LPO_SOURCE = PM_PARAMETER
     WHERE
-        DATEDIFF(DATE, LPO_SENDDT) >= 0
-        AND DATEDIFF(DATE, LPO_SENDDT) <= 7--配信から7日以内の流入に絞る
+        DATEDIFF(LPO_DATE, LPO_SENDDT) >= 0
+        AND DATEDIFF(LPO_DATE, LPO_SENDDT) <= 7--配信から7日以内の流入に絞る
     GROUP EACH BY
         VC_VISITTIME
         ,VC_SENDDT
@@ -94,30 +87,32 @@ FROM
     SELECT
         LPN_VISITTIME AS VC_VISITTIME
         ,LPN_SENDDT AS VC_SENDDT
-        ,2 AS VC_CHANNEL
-        ,4 AS VC_CHANNEL_DETAIL
+        ,2 AS VC_CHANNEL--LINE
+        ,4 AS VC_CHANNEL_DETAIL--パーソナライズ
         ,INTEGER(LPN_CAMPAIGNID) AS VC_CAMPAIGNID
         ,INTEGER(LPN_OFFERID) AS VC_OFFERID
         ,LPN_FULLVISITORID AS VC_FULLVISITORID
         ,SUM(INTEGER(NVL(LPN_REVENUE/1000000, 0))) AS VC_REVENUE
     FROM (
         SELECT
-            FORMAT_UTC_USEC(visitStartTime*  1000000+ 32400000000) AS LPN_VISITTIME
-            ,LEFT(trafficSource.campaign,8) AS LPN_SENDDT
-            ,NTH(3,SPLIT(trafficSource.source, '_')) AS LPN_CAMPAIGNID
-            ,NTH(2,SPLIT(trafficSource.campaign, '_')) AS LPN_OFFERID
+            FORMAT_UTC_USEC(VISITSTARTTIME * 1000000 + 32400000000) AS LPN_VISITTIME
+            ,LEFT(TRAFFICSOURCE.CAMPAIGN, 8) AS LPN_SENDDT
+            ,NTH(3, SPLIT(TRAFFICSOURCE.SOURCE, '_')) AS LPN_CAMPAIGNID
+            ,NTH(2, SPLIT(TRAFFICSOURCE.CAMPAIGN, '_')) AS LPN_OFFERID
             ,FULLVISITORID AS LPN_FULLVISITORID
-            ,totals.totalTransactionRevenue AS LPN_REVENUE
-            ,DATE
+            ,TOTALS.TOTALTRANSACTIONREVENUE AS LPN_REVENUE
+            ,DATE AS LPN_DATE
         FROM
-            TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
+            TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('2017-11-21'), TIMESTAMP('2017-11-21'))--TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
         WHERE
-            trafficsource.medium = 'linepersonal'
+            TRAFFICSOURCE.MEDIUM = 'linepersonal'
     ) AS LINE_PERSONALIZE_NEW/*PREFIX = LPN*/
     WHERE
-        REGEXP_MATCH(STRING(LPN_OFFERID),'^[0-9]{2,}')
-        AND DATEDIFF(DATE, LPN_SENDDT) >= 0
-        AND DATEDIFF(DATE, LPN_SENDDT) <= 7--配信から7日以内の流入に絞る
+        REGEXP_MATCH(LPN_OFFERID, R'^[0-9]{1,}')
+        AND DATEDIFF(LPN_DATE, LPN_SENDDT) >= 0
+        AND DATEDIFF(LPN_DATE, LPN_SENDDT) <= 7--配信から7日以内の流入に絞る
+        AND INTEGER(LPN_CAMPAIGNID) IS NOT NULL
+        AND INTEGER(LPN_OFFERID) IS NOT NULL
     GROUP EACH BY
         VC_VISITTIME
         ,VC_SENDDT
@@ -134,30 +129,26 @@ FROM
         ,LT_SENDDT AS VC_SENDDT
         ,PM_CHANNEL AS VC_CHANNEL
         ,PM_CHANNEL_DETAIL AS VC_CHANNEL_DETAIL
-        ,CASE
-            WHEN PM_PARAMETER IS NOT NULL THEN PM_MAPPINGID
-            ELSE NULL
-        END AS VC_CAMPAIGNID
+        ,PM_MAPPINGID AS VC_CAMPAIGNID
         ,LT_FULLVISITORID AS VC_FULLVISITORID
         ,SUM(INTEGER(NVL(LT_REVENUE/1000000, 0))) AS VC_REVENUE
     FROM (
         SELECT
-            FORMAT_UTC_USEC(visitStartTime*  1000000+ 32400000000) AS LT_VISITTIME
-            ,LEFT(trafficSource.campaign,8) AS LT_SENDDT
-            ,trafficSource.source AS LT_SOURCE
+            FORMAT_UTC_USEC(VISITSTARTTIME * 1000000 + 32400000000) AS LT_VISITTIME
+            ,LEFT(TRAFFICSOURCE.CAMPAIGN, 8) AS LT_SENDDT
+            ,TRAFFICSOURCE.SOURCE AS LT_SOURCE
             ,FULLVISITORID AS LT_FULLVISITORID
-            ,totals.totalTransactionRevenue AS LT_REVENUE
-            ,DATE
+            ,TOTALS.TOTALTRANSACTIONREVENUE AS LT_REVENUE
+            ,DATE AS LT_DATE
         FROM
-            TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
-        WHERE
-            trafficsource.medium = 'line'
-            AND trafficSource.source = 'tl_l'
+            TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('2017-11-21'), TIMESTAMP('2017-11-21'))--TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
     ) AS LINE_TIMELINE/*PREFIX = LT*/
-    LEFT OUTER JOIN [durable-binder-547:ZZ_CFM.TAT_PARAMETERMAPPING] AS MAPPING_TABLE ON LT_SOURCE = PM_PARAMETER
+    INNER JOIN [durable-binder-547:ZZ_CFM.TAT_PARAMETERMAPPING] AS MAPPING_TABLE ON LT_SOURCE = PM_PARAMETER
     WHERE
-        DATEDIFF(DATE, LT_SENDDT) >= 0
-        AND DATEDIFF(DATE, LT_SENDDT) <= 7--配信から7日以内の流入に絞る
+        DATEDIFF(LT_DATE, LT_SENDDT) >= 0
+        AND DATEDIFF(LT_DATE, LT_SENDDT) <= 7--配信から7日以内の流入に絞る
+        AND PM_CHANNEL = 2--LINE
+        AND PM_CHANNEL_DETAIL = 5--タイムライン
     GROUP EACH BY
         VC_VISITTIME
         ,VC_SENDDT
@@ -172,25 +163,22 @@ FROM
         LR_VISITTIME AS VC_VISITTIME
         ,PM_CHANNEL AS VC_CHANNEL
         ,PM_CHANNEL_DETAIL AS VC_CHANNEL_DETAIL
-        ,CASE
-            WHEN PM_PARAMETER IS NOT NULL THEN PM_MAPPINGID
-            ELSE NULL
-        END AS VC_CAMPAIGNID
+        ,PM_MAPPINGID AS VC_CAMPAIGNID
         ,LR_FULLVISITORID AS VC_FULLVISITORID
         ,SUM(INTEGER(NVL(LR_REVENUE/1000000, 0))) AS VC_REVENUE
     FROM (
         SELECT
-            FORMAT_UTC_USEC(visitStartTime*  1000000+ 32400000000) AS LR_VISITTIME
-            ,trafficSource.source AS LR_SOURCE
+            FORMAT_UTC_USEC(VISITSTARTTIME * 1000000 + 32400000000) AS LR_VISITTIME
+            ,TRAFFICSOURCE.SOURCE AS LR_SOURCE
             ,FULLVISITORID AS LR_FULLVISITORID
-            ,totals.totalTransactionRevenue AS LR_REVENUE
+            ,TOTALS.TOTALTRANSACTIONREVENUE AS LR_REVENUE
         FROM
-            TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
-        WHERE
-            trafficsource.medium = 'line'
-            AND trafficSource.source = 'rm_l'
+            TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('2017-11-21'), TIMESTAMP('2017-11-21'))--TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
     ) AS LINE_RICHMENU/*PREFIX = LR*/
-    LEFT OUTER JOIN [durable-binder-547:ZZ_CFM.TAT_PARAMETERMAPPING] AS MAPPING_TABLE ON LR_SOURCE = PM_PARAMETER
+    INNER JOIN [durable-binder-547:ZZ_CFM.TAT_PARAMETERMAPPING] AS MAPPING_TABLE ON LR_SOURCE = PM_PARAMETER
+    WHERE
+        PM_CHANNEL = 2--LINE
+        AND PM_CHANNEL_DETAIL = 6--リッチメニュー
     GROUP EACH BY
         VC_VISITTIME
         ,VC_CHANNEL

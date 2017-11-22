@@ -16,57 +16,54 @@ FROM
     SELECT
         PW_VISITTIME AS VC_VISITTIME
         ,PW_SENDDT AS VC_SENDDT
+        ,3 AS VC_CHANNEL--PUSH
         ,CASE
-            WHEN REGEXP_MATCH(PW_CAMPAIGN, r'PUSH_(M|S|N)\d{3}.*')THEN PM_CHANNEL
-            WHEN REGEXP_MATCH(PW_CAMPAIGN, r'PUSH_P\d{3}.*')THEN 3
-            ELSE NULL
-        END AS VC_CHANNEL
-        ,CASE
-            WHEN REGEXP_MATCH(PW_CAMPAIGN, r'PUSH_(M|S|N)\d{3}.*')THEN PM_CHANNEL_DETAIL
-            WHEN REGEXP_MATCH(PW_CAMPAIGN, r'PUSH_P\d{3}.*')THEN 4
-            ELSE NULL
+            WHEN PW_CAMPAIGNFLAG = 1 THEN PM_CHANNEL_DETAIL
+            WHEN PW_CAMPAIGNFLAG = 2 THEN 4--パーソナライズ
         END AS VC_CHANNEL_DETAIL
         ,CASE
-            WHEN REGEXP_MATCH(PW_CAMPAIGN, r'PUSH_(M|S|N)\d{3}.*') AND PM_PARAMETER IS NOT NULL THEN PM_MAPPINGID
-            WHEN REGEXP_MATCH(PW_CAMPAIGN, r'PUSH_P\d{3}.*') THEN INTEGER(PW_CAMPAIGNID)
-            ELSE NULL
+            WHEN PW_CAMPAIGNFLAG = 1 THEN PM_MAPPINGID
+            WHEN PW_CAMPAIGNFLAG = 2 THEN INTEGER(PW_CAMPAIGNID)
         END AS VC_CAMPAIGNID
-        ,CASE
-            WHEN PW_OS = 'ios' THEN 1
-            WHEN PW_OS = 'android' THEN 2
-            ELSE NULL
-        END AS VC_OS
+        ,PW_OS AS VC_OS
         ,PW_FULLVISITORID AS VC_FULLVISITORID
         ,SUM(INTEGER(NVL(PW_REVENUE/1000000, 0))) AS VC_REVENUE
     FROM (
         SELECT
-            FORMAT_UTC_USEC(visitStartTime*  1000000+ 32400000000) AS PW_VISITTIME
-            ,NTH(4,SPLIT(REGEXP_REPLACE(trafficSource.campaign, r'^.*-', ''), '_')) AS PW_SENDDT
+            FORMAT_UTC_USEC(VISITSTARTTIME * 1000000 + 32400000000) AS PW_VISITTIME
+            ,NTH(4, SPLIT(REGEXP_REPLACE(TRAFFICSOURCE.CAMPAIGN, R'^.*-', ''), '_')) AS PW_SENDDT
             ,CASE
-                WHEN REGEXP_MATCH(trafficSource.campaign, r'PUSH_(M|S|N)\d{3}.*')
-                    THEN CONCAT(NTH(2,SPLIT(REGEXP_REPLACE(trafficSource.campaign, r'^.*-', ''), '_')),'_',NTH(3,SPLIT(REGEXP_REPLACE(trafficSource.campaign, r'^.*-', ''), '_')) )
-                WHEN REGEXP_MATCH(trafficSource.campaign, r'PUSH_P\d{3}.*')
-                    THEN NTH(1,SPLIT(REGEXP_REPLACE(trafficSource.campaign, r'^.*PUSH_P', ''), '_'))
+                WHEN REGEXP_MATCH(TRAFFICSOURCE.CAMPAIGN, R'PUSH_(M|S|N)\d{3}.*') THEN 1--パーソナライズ以外
+                WHEN REGEXP_MATCH(TRAFFICSOURCE.CAMPAIGN, R'PUSH_P\d{3}.*') THEN 2--パーソナライズ
+            END AS PW_CAMPAIGNFLAG
+            ,CASE
+                WHEN REGEXP_MATCH(TRAFFICSOURCE.CAMPAIGN, R'PUSH_(M|S|N)\d{3}.*')
+                    THEN CONCAT(NTH(2, SPLIT(REGEXP_REPLACE(TRAFFICSOURCE.CAMPAIGN, R'^.*-', ''), '_')),'_',NTH(3,SPLIT(REGEXP_REPLACE(TRAFFICSOURCE.CAMPAIGN, R'^.*-', ''), '_')) )
+                WHEN REGEXP_MATCH(TRAFFICSOURCE.CAMPAIGN, R'PUSH_P\d{3}.*')
+                    THEN NTH(1, SPLIT(REGEXP_REPLACE(TRAFFICSOURCE.CAMPAIGN, R'^.*PUSH_P', ''), '_'))
                 ELSE NULL
             END AS PW_CAMPAIGNID
-            ,trafficSource.campaign AS PW_CAMPAIGN
-            ,trafficSource.source AS PW_OS
             ,CASE
-                WHEN REGEXP_MATCH(trafficSource.campaign, r'PUSH_M\d{3}.*') THEN FULLVISITORID
+                WHEN TRAFFICSOURCE.SOURCE = 'ios' THEN 1
+                WHEN TRAFFICSOURCE.SOURCE = 'android' THEN 2
+            END AS PW_OS
+            ,CASE
+                WHEN REGEXP_MATCH(TRAFFICSOURCE.CAMPAIGN, R'PUSH_M\d{3}.*') THEN FULLVISITORID
                 ELSE NULL
             END AS PW_FULLVISITORID--ウェブビュー遷移のマスPUSHのみFULLVISITORIDを取得、それ以外は収益のみの取得
-            ,totals.totalTransactionRevenue AS PW_REVENUE
-            ,DATE
+            ,TOTALS.TOTALTRANSACTIONREVENUE AS PW_REVENUE
+            ,DATE AS PW_DATE
         FROM
-            TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
+            TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('2017-11-21'), TIMESTAMP('2017-11-21'))--TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
         WHERE
-            trafficSource.source IN ('ios','android')
-            AND REGEXP_MATCH(trafficSource.campaign, r'PUSH_(M|S|N|P)\d{3}.*')
+            TRAFFICSOURCE.SOURCE IN ('ios', 'android')
+            AND REGEXP_MATCH(TRAFFICSOURCE.CAMPAIGN, R'PUSH_(M|S|N|P)\d{3}.*')
     )AS PUSH_WEBVIEW/*PREFIX = PW*/
-    LEFT OUTER JOIN [durable-binder-547:ZZ_CFM.TAT_PARAMETERMAPPING] AS MAPPING_TABLE ON PW_CAMPAIGNID = PM_PARAMETER
+    LEFT OUTER JOIN [durable-binder-547:ZZ_CFM.TAT_PARAMETERMAPPING] AS MAPPING_TABLE ON PW_CAMPAIGNID = PM_PARAMETER--パーソナライズPUSHはマッピングテーブルとJOINできないのでLEFT JOIN
     WHERE
-        DATEDIFF(DATE, PW_SENDDT) >= 0
-        AND DATEDIFF(DATE, PW_SENDDT) <= 7--配信から7日以内の流入に絞る
+        DATEDIFF(PW_DATE, PW_SENDDT) >= 0
+        AND DATEDIFF(PW_DATE, PW_SENDDT) <= 7--配信から7日以内の流入に絞る
+        AND (PM_MAPPINGID IS NOT NULL OR INTEGER(PW_CAMPAIGNID) IS NOT NULL)
     GROUP EACH BY
         VC_VISITTIME
         ,VC_SENDDT
@@ -83,10 +80,7 @@ FROM
         ,PMN_SENDDT AS VC_SENDDT
         ,PM_CHANNEL AS VC_CHANNEL
         ,PM_CHANNEL_DETAIL AS VC_CHANNEL_DETAIL
-        ,CASE
-            WHEN PM_PARAMETER IS NOT NULL THEN PM_MAPPINGID
-            ELSE NULL
-        END AS VC_CAMPAIGNID
+        ,PM_MAPPINGID AS VC_CAMPAIGNID
         ,PMN_OS AS VC_OS
         ,PMN_FULLVISITORID AS VC_FULLVISITORID
     FROM (
@@ -96,38 +90,40 @@ FROM
             ,PMN_CAMPAIGNID
             ,PMN_OS
             ,PMN_FULLVISITORID
-            ,DATE
+            ,PMN_DATE
         FROM
             --PUSH_MASS_NATIVE/*PREFIX = PMN*/
             --iOS
             (SELECT
-                FORMAT_UTC_USEC(visitStartTime*  1000000+ 32400000000) AS PMN_VISITTIME
-                ,NTH(3,SPLIT(REGEXP_REPLACE(hits.appInfo.screenName, r'^.*PUSH_S', ''), '_')) AS PMN_SENDDT
-                ,CONCAT(NTH(1,SPLIT(REGEXP_REPLACE(hits.appInfo.screenName, r'^.*PUSH_', ''), '_')), '_', NTH(2,SPLIT(REGEXP_REPLACE(hits.appInfo.screenName, r'^.*PUSH_', ''), '_'))) AS PMN_CAMPAIGNID
+                FORMAT_UTC_USEC(VISITSTARTTIME * 1000000 + 32400000000) AS PMN_VISITTIME
+                ,NTH(3, SPLIT(REGEXP_REPLACE(HITS.APPINFO.SCREENNAME, R'^.*PUSH_', ''), '_')) AS PMN_SENDDT
+                ,CONCAT(NTH(1, SPLIT(REGEXP_REPLACE(HITS.APPINFO.SCREENNAME, R'^.*PUSH_', ''), '_')), '_', NTH(2, SPLIT(REGEXP_REPLACE(HITS.APPINFO.SCREENNAME, R'^.*PUSH_', ''), '_'))) AS PMN_CAMPAIGNID
                 ,1 AS PMN_OS
                 ,FULLVISITORID AS PMN_FULLVISITORID
-                ,DATE
+                ,DATE AS PMN_DATE
             FROM
-                TABLE_DATE_RANGE([90402834.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
+                TABLE_DATE_RANGE([90402834.ga_sessions_],TIMESTAMP('2017-11-21'), TIMESTAMP('2017-11-21'))--TABLE_DATE_RANGE([90402834.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
             WHERE
-                REGEXP_MATCH(hits.appInfo.screenName,'^.*push_type=PUSH_S')),
+                REGEXP_MATCH(hits.appInfo.screenName, R'^.*push_type=PUSH_S')),
             --Android
             (SELECT
-                FORMAT_UTC_USEC(visitStartTime*  1000000+ 32400000000) AS PMN_VISITTIME
-                ,NTH(3,SPLIT(REGEXP_REPLACE(hits.appInfo.screenName, r'^.*PUSH_S', ''), '_')) AS PMN_SENDDT
-                ,CONCAT(NTH(1,SPLIT(REGEXP_REPLACE(hits.appInfo.screenName, r'^.*PUSH_', ''), '_')), '_', NTH(2,SPLIT(REGEXP_REPLACE(hits.appInfo.screenName, r'^.*PUSH_', ''), '_'))) AS PMN_CAMPAIGNID
+                FORMAT_UTC_USEC(VISITSTARTTIME * 1000000 + 32400000000) AS PMN_VISITTIME
+                ,NTH(3, SPLIT(REGEXP_REPLACE(HITS.APPINFO.SCREENNAME, R'^.*PUSH_', ''), '_')) AS PMN_SENDDT
+                ,CONCAT(NTH(1, SPLIT(REGEXP_REPLACE(HITS.APPINFO.SCREENNAME, R'^.*PUSH_', ''), '_')), '_', NTH(2, SPLIT(REGEXP_REPLACE(HITS.APPINFO.SCREENNAME, R'^.*PUSH_', ''), '_'))) AS PMN_CAMPAIGNID
                 ,2 AS PMN_OS
                 ,FULLVISITORID AS PMN_FULLVISITORID
-                ,DATE
+                ,DATE AS PMN_DATE
             FROM
-                TABLE_DATE_RANGE([90303901.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
+                TABLE_DATE_RANGE([90303901.ga_sessions_],TIMESTAMP('2017-11-21'), TIMESTAMP('2017-11-21'))--TABLE_DATE_RANGE([90303901.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
             WHERE
-                REGEXP_MATCH(hits.appInfo.screenName,'^.*push_type=PUSH_S'))
+                REGEXP_MATCH(hits.appInfo.screenName, R'^.*push_type=PUSH_S')),
     ) AS VISIT
-    LEFT OUTER JOIN [durable-binder-547:ZZ_CFM.TAT_PARAMETERMAPPING] AS MAPPING_TABLE ON PMN_CAMPAIGNID = PM_PARAMETER
+    INNER JOIN [durable-binder-547:ZZ_CFM.TAT_PARAMETERMAPPING] AS MAPPING_TABLE ON PMN_CAMPAIGNID = PM_PARAMETER
     WHERE
-        DATEDIFF(DATE, PMN_SENDDT) >= 0
-        AND DATEDIFF(DATE, PMN_SENDDT) <= 7--配信から7日以内の流入に絞る
+        DATEDIFF(PMN_DATE, PMN_SENDDT) >= 0
+        AND DATEDIFF(PMN_DATE, PMN_SENDDT) <= 7--配信から7日以内の流入に絞る
+        AND PM_CHANNEL = 3--PUSH
+        AND PM_CHANNEL_DETAIL = 2--マス
     GROUP EACH BY
         VC_VISITTIME
         ,VC_SENDDT
@@ -144,10 +140,7 @@ FROM
         ,PN_SENDDT AS VC_SENDDT
         ,PM_CHANNEL AS VC_CHANNEL
         ,PM_CHANNEL_DETAIL AS VC_CHANNEL_DETAIL
-        ,CASE
-            WHEN PM_PARAMETER IS NOT NULL THEN PM_MAPPINGID
-            ELSE NULL
-        END AS VC_CAMPAIGNID
+        ,PM_MAPPINGID AS VC_CAMPAIGNID
         ,PN_OS AS VC_OS
         ,PN_FULLVISITORID AS VC_FULLVISITORID
     FROM (
@@ -157,38 +150,40 @@ FROM
             ,PN_CAMPAIGNID
             ,PN_OS
             ,PN_FULLVISITORID
-            ,DATE
+            ,PN_DATE
         FROM
             --PUSH_NEWARRIVAL/*PREFIX = PN*/
             --iOS
             (SELECT
-                FORMAT_UTC_USEC(visitStartTime*  1000000+ 32400000000) AS PN_VISITTIME
-                ,NTH(3,SPLIT(REGEXP_REPLACE(hits.appInfo.screenName, r'^.*PUSH_N', ''), '_')) AS PN_SENDDT
-                ,CONCAT(NTH(1,SPLIT(REGEXP_REPLACE(hits.appInfo.screenName, r'^.*PUSH_', ''), '_')), '_', NTH(2,SPLIT(REGEXP_REPLACE(hits.appInfo.screenName, r'^.*PUSH_', ''), '_'))) AS PN_CAMPAIGNID
+                FORMAT_UTC_USEC(VISITSTARTTIME * 1000000 + 32400000000) AS PN_VISITTIME
+                ,NTH(3, SPLIT(REGEXP_REPLACE(HITS.APPINFO.SCREENNAME, R'^.*PUSH_', ''), '_')) AS PN_SENDDT
+                ,CONCAT(NTH(1, SPLIT(REGEXP_REPLACE(HITS.APPINFO.SCREENNAME, R'^.*PUSH_', ''), '_')), '_', NTH(2, SPLIT(REGEXP_REPLACE(HITS.APPINFO.SCREENNAME, R'^.*PUSH_', ''), '_'))) AS PN_CAMPAIGNID
                 ,1 AS PN_OS
                 ,FULLVISITORID AS PN_FULLVISITORID
-                ,DATE
+                ,DATE AS PN_DATE
             FROM
-                TABLE_DATE_RANGE([90402834.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
+                TABLE_DATE_RANGE([90402834.ga_sessions_],TIMESTAMP('2017-11-21'), TIMESTAMP('2017-11-21'))--TABLE_DATE_RANGE([90402834.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
             WHERE
-                REGEXP_MATCH(hits.appInfo.screenName,'^.*push_type=PUSH_N')),
+                REGEXP_MATCH(hits.appInfo.screenName, R'^.*push_type=PUSH_N')),
             --Android
             (SELECT
-                FORMAT_UTC_USEC(visitStartTime*  1000000+ 32400000000) AS PN_VISITTIME
-                ,NTH(3,SPLIT(REGEXP_REPLACE(hits.appInfo.screenName, r'^.*PUSH_N', ''), '_')) AS PN_SENDDT
-                ,CONCAT(NTH(1,SPLIT(REGEXP_REPLACE(hits.appInfo.screenName, r'^.*PUSH_', ''), '_')), '_', NTH(2,SPLIT(REGEXP_REPLACE(hits.appInfo.screenName, r'^.*PUSH_', ''), '_'))) AS PN_CAMPAIGNID
+                FORMAT_UTC_USEC(VISITSTARTTIME * 1000000 + 32400000000) AS PN_VISITTIME
+                ,NTH(3, SPLIT(REGEXP_REPLACE(HITS.APPINFO.SCREENNAME, R'^.*PUSH_', ''), '_')) AS PN_SENDDT
+                ,CONCAT(NTH(1, SPLIT(REGEXP_REPLACE(HITS.APPINFO.SCREENNAME, R'^.*PUSH_', ''), '_')), '_', NTH(2, SPLIT(REGEXP_REPLACE(HITS.APPINFO.SCREENNAME, R'^.*PUSH_', ''), '_'))) AS PN_CAMPAIGNID
                 ,2 AS PN_OS
                 ,FULLVISITORID AS PN_FULLVISITORID
-                ,DATE
+                ,DATE AS PN_DATE
             FROM
-                TABLE_DATE_RANGE([90303901.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
+                TABLE_DATE_RANGE([90303901.ga_sessions_],TIMESTAMP('2017-11-21'), TIMESTAMP('2017-11-21'))--TABLE_DATE_RANGE([90303901.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
             WHERE
-                REGEXP_MATCH(hits.appInfo.screenName,'^.*push_type=PUSH_N'))
+                REGEXP_MATCH(HITS.APPINFO.SCREENNAME, R'^.*push_type=PUSH_N'))
         ) AS VISIT
-        LEFT OUTER JOIN [durable-binder-547:ZZ_CFM.TAT_PARAMETERMAPPING] AS MAPPING_TABLE ON PN_CAMPAIGNID = PM_PARAMETER
+        INNER JOIN [durable-binder-547:ZZ_CFM.TAT_PARAMETERMAPPING] AS MAPPING_TABLE ON PN_CAMPAIGNID = PM_PARAMETER
     WHERE
-        DATEDIFF(DATE, PN_SENDDT) >= 0
-        AND DATEDIFF(DATE, PN_SENDDT) <= 7--配信から7日以内の流入に絞る
+        DATEDIFF(PN_DATE, PN_SENDDT) >= 0
+        AND DATEDIFF(PN_DATE, PN_SENDDT) <= 7--配信から7日以内の流入に絞る
+        AND PM_CHANNEL = 3--PUSH
+        AND PM_CHANNEL_DETAIL = 1--新着
     GROUP EACH BY
         VC_VISITTIME
         ,VC_SENDDT
@@ -203,8 +198,8 @@ FROM
     SELECT
         PP_VISITTIME AS VC_VISITTIME
         ,PP_SENDDT AS VC_SENDDT
-        ,3 AS VC_CHANNEL
-        ,4 AS VC_CHANNEL_DETAIL
+        ,3 AS VC_CHANNEL--PUSH
+        ,4 AS VC_CHANNEL_DETAIL--パーソナライズ
         ,INTEGER(PP_CAMPAIGNID) AS VC_CAMPAIGNID
         ,PP_OS AS VC_OS
         ,PP_FULLVISITORID AS VC_FULLVISITORID
@@ -212,31 +207,32 @@ FROM
         --PUSH_PERSONALIZE/*PREFIX = PP*/
         --iOS
         (SELECT
-            FORMAT_UTC_USEC(visitStartTime*  1000000+ 32400000000) AS PP_VISITTIME
-            ,NTH(3,SPLIT(REGEXP_REPLACE(hits.appInfo.screenName, r'^.*PUSH_P', ''), '_')) AS PP_SENDDT
-            ,NTH(1,SPLIT(REGEXP_REPLACE(hits.appInfo.screenName, r'^.*PUSH_P', ''), '_')) AS PP_CAMPAIGNID
+            FORMAT_UTC_USEC(VISITSTARTTIME * 1000000 + 32400000000) AS PP_VISITTIME
+            ,NTH(3, SPLIT(REGEXP_REPLACE(HITS.APPINFO.SCREENNAME, R'^.*PUSH_', ''), '_')) AS PP_SENDDT
+            ,NTH(1, SPLIT(REGEXP_REPLACE(HITS.APPINFO.SCREENNAME, R'^.*PUSH_P', ''), '_')) AS PP_CAMPAIGNID
             ,1 AS PP_OS
             ,FULLVISITORID AS PP_FULLVISITORID
-            ,DATE
+            ,DATE AS PP_DATE
         FROM
-            TABLE_DATE_RANGE([90402834.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
+            TABLE_DATE_RANGE([90402834.ga_sessions_],TIMESTAMP('2017-11-21'), TIMESTAMP('2017-11-21'))--TABLE_DATE_RANGE([90402834.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
         WHERE
-            REGEXP_MATCH(hits.appInfo.screenName,'^.*push_type=PUSH_P')),
+            REGEXP_MATCH(HITS.APPINFO.SCREENNAME, R'^.*push_type=PUSH_P')),
         --Android
         (SELECT
-            FORMAT_UTC_USEC(visitStartTime*  1000000+ 32400000000) AS PP_VISITTIME
-            ,NTH(3,SPLIT(REGEXP_REPLACE(hits.appInfo.screenName, r'^.*PUSH_P', ''), '_')) AS PP_SENDDT
-            ,NTH(1,SPLIT(REGEXP_REPLACE(hits.appInfo.screenName, r'^.*PUSH_P', ''), '_')) AS PP_CAMPAIGNID
+            FORMAT_UTC_USEC(VISITSTARTTIME * 1000000 + 32400000000) AS PP_VISITTIME
+            ,NTH(3, SPLIT(REGEXP_REPLACE(HITS.APPINFO.SCREENNAME, R'^.*PUSH_', ''), '_')) AS PP_SENDDT
+            ,NTH(1, SPLIT(REGEXP_REPLACE(HITS.APPINFO.SCREENNAME, R'^.*PUSH_P', ''), '_')) AS PP_CAMPAIGNID
             ,2 AS PP_OS
             ,FULLVISITORID AS PP_FULLVISITORID
-            ,DATE
+            ,DATE AS PP_DATE
         FROM
-            TABLE_DATE_RANGE([90303901.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
+            TABLE_DATE_RANGE([90303901.ga_sessions_],TIMESTAMP('2017-11-21'), TIMESTAMP('2017-11-21'))--TABLE_DATE_RANGE([90303901.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
         WHERE
-            REGEXP_MATCH(hits.appInfo.screenName,'^.*push_type=PUSH_P'))
+            REGEXP_MATCH(HITS.APPINFO.SCREENNAME, R'^.*push_type=PUSH_P'))
     WHERE
-        DATEDIFF(DATE, PP_SENDDT) >= 0
-        AND DATEDIFF(DATE, PP_SENDDT) <= 7--配信から7日以内の流入に絞る
+        DATEDIFF(PP_DATE, PP_SENDDT) >= 0
+        AND DATEDIFF(PP_DATE, PP_SENDDT) <= 7--配信から7日以内の流入に絞る
+        AND INTEGER(PP_CAMPAIGNID) IS NOT NULL
     GROUP EACH BY
         VC_VISITTIME
         ,VC_SENDDT
