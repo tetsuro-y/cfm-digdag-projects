@@ -54,7 +54,7 @@ FROM
             ,TOTALS.TOTALTRANSACTIONREVENUE AS PW_REVENUE
             ,DATE AS PW_DATE
         FROM
-            TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('2017-11-21'), TIMESTAMP('2017-11-21'))--TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
+            TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
         WHERE
             TRAFFICSOURCE.SOURCE IN ('ios', 'android')
             AND REGEXP_MATCH(TRAFFICSOURCE.CAMPAIGN, R'PUSH_(M|S|N|P)\d{3}.*')
@@ -102,7 +102,7 @@ FROM
                 ,FULLVISITORID AS PMN_FULLVISITORID
                 ,DATE AS PMN_DATE
             FROM
-                TABLE_DATE_RANGE([90402834.ga_sessions_],TIMESTAMP('2017-11-21'), TIMESTAMP('2017-11-21'))--TABLE_DATE_RANGE([90402834.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
+                TABLE_DATE_RANGE([90402834.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
             WHERE
                 REGEXP_MATCH(hits.appInfo.screenName, R'^.*push_type=PUSH_S')),
             --Android
@@ -114,7 +114,7 @@ FROM
                 ,FULLVISITORID AS PMN_FULLVISITORID
                 ,DATE AS PMN_DATE
             FROM
-                TABLE_DATE_RANGE([90303901.ga_sessions_],TIMESTAMP('2017-11-21'), TIMESTAMP('2017-11-21'))--TABLE_DATE_RANGE([90303901.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
+                TABLE_DATE_RANGE([90303901.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
             WHERE
                 REGEXP_MATCH(hits.appInfo.screenName, R'^.*push_type=PUSH_S')),
     ) AS VISIT
@@ -162,7 +162,7 @@ FROM
                 ,FULLVISITORID AS PN_FULLVISITORID
                 ,DATE AS PN_DATE
             FROM
-                TABLE_DATE_RANGE([90402834.ga_sessions_],TIMESTAMP('2017-11-21'), TIMESTAMP('2017-11-21'))--TABLE_DATE_RANGE([90402834.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
+                TABLE_DATE_RANGE([90402834.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
             WHERE
                 REGEXP_MATCH(hits.appInfo.screenName, R'^.*push_type=PUSH_N')),
             --Android
@@ -174,7 +174,7 @@ FROM
                 ,FULLVISITORID AS PN_FULLVISITORID
                 ,DATE AS PN_DATE
             FROM
-                TABLE_DATE_RANGE([90303901.ga_sessions_],TIMESTAMP('2017-11-21'), TIMESTAMP('2017-11-21'))--TABLE_DATE_RANGE([90303901.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
+                TABLE_DATE_RANGE([90303901.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
             WHERE
                 REGEXP_MATCH(HITS.APPINFO.SCREENNAME, R'^.*push_type=PUSH_N'))
         ) AS VISIT
@@ -214,7 +214,7 @@ FROM
             ,FULLVISITORID AS PP_FULLVISITORID
             ,DATE AS PP_DATE
         FROM
-            TABLE_DATE_RANGE([90402834.ga_sessions_],TIMESTAMP('2017-11-21'), TIMESTAMP('2017-11-21'))--TABLE_DATE_RANGE([90402834.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
+            TABLE_DATE_RANGE([90402834.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
         WHERE
             REGEXP_MATCH(HITS.APPINFO.SCREENNAME, R'^.*push_type=PUSH_P')),
         --Android
@@ -226,7 +226,7 @@ FROM
             ,FULLVISITORID AS PP_FULLVISITORID
             ,DATE AS PP_DATE
         FROM
-            TABLE_DATE_RANGE([90303901.ga_sessions_],TIMESTAMP('2017-11-21'), TIMESTAMP('2017-11-21'))--TABLE_DATE_RANGE([90303901.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
+            TABLE_DATE_RANGE([90303901.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
         WHERE
             REGEXP_MATCH(HITS.APPINFO.SCREENNAME, R'^.*push_type=PUSH_P'))
     WHERE

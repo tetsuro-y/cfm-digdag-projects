@@ -38,7 +38,7 @@ FROM
             ,TOTALS.TOTALTRANSACTIONREVENUE AS MNT_REVENUE
             ,DATE AS MNT_DATE
         FROM
-            TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('2017-11-21'), TIMESTAMP('2017-11-21'))--TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
+            TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
         WHERE
             TRAFFICSOURCE.MEDIUM = 'mailmag'
             AND TRAFFICSOURCE.SOURCE = 'ni_m'--CHANNELIDとCHANNELDETAILIDではTOWN/USEDの区別がつかないためベタ書き

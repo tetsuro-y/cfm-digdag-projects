@@ -35,7 +35,7 @@ FROM
             ,TOTALS.TOTALTRANSACTIONREVENUE AS MPO_REVENUE
             ,DATE AS MPO_DATE
         FROM
-            TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('2017-11-21'), TIMESTAMP('2017-11-21'))--TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
+            TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
         WHERE
             TRAFFICSOURCE.MEDIUM = 'mailpersonal'
     ) AS MAIL_PERSONALIZE_OLD/*PREFIX = MPO*/
@@ -77,7 +77,7 @@ FROM
         ,TOTALS.TOTALTRANSACTIONREVENUE AS MPN_REVENUE
         ,DATE AS MPN_DATE
     FROM
-        TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('2017-11-21'), TIMESTAMP('2017-11-21'))--TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
+        TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
     WHERE
         TRAFFICSOURCE.MEDIUM = 'mailpersonal'
     ) AS MAIL_PERSONALIZE_NEW/*PREFIX = MPN*/
@@ -117,7 +117,7 @@ FROM
             ,TOTALS.TOTALTRANSACTIONREVENUE AS MT_REVENUE
             ,DATE AS MT_DATE
         FROM
-            TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('2017-11-21'), TIMESTAMP('2017-11-21'))--TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
+            TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
     ) AS MAIL_TRANSACTION/*PREFIX = MT*/
     INNER JOIN [durable-binder-547:ZZ_CFM.TAT_PARAMETERMAPPING] AS MAPPING_TABLE ON MT_SOURCE = PM_PARAMETER
     WHERE

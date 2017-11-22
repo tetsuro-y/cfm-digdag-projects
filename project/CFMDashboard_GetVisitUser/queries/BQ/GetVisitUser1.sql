@@ -44,7 +44,7 @@ FROM
             ,DATE AS MM_DATE
             ,TRAFFICSOURCE.CAMPAIGN AS MM_CAMPAIGN
         FROM
-            TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('2017-11-21'), TIMESTAMP('2017-11-21'))--TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
+            TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
     ) AS MAIL_MASS/*PREFIX = MM*/
     INNER JOIN [durable-binder-547:ZZ_CFM.TAT_PARAMETERMAPPING] AS MAPPING_TABLE ON MM_SOURCE = PM_PARAMETER
     WHERE

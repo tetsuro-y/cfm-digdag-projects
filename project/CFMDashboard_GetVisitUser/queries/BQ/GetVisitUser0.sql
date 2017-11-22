@@ -30,7 +30,7 @@ FROM
             ,TOTALS.TOTALTRANSACTIONREVENUE AS LM_REVENUE
             ,DATE AS LM_DATE
         FROM
-            TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('2017-11-21'), TIMESTAMP('2017-11-21'))--TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
+            TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
     ) AS LINE_MASS/*PREFIX = LM*/
     INNER JOIN [durable-binder-547:ZZ_CFM.TAT_PARAMETERMAPPING] AS MAPPING_TABLE ON LM_SOURCE = PM_PARAMETER
     WHERE
@@ -65,7 +65,7 @@ FROM
             ,TOTALS.TOTALTRANSACTIONREVENUE AS LPO_REVENUE
             ,DATE AS LPO_DATE
         FROM
-            TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('2017-11-21'), TIMESTAMP('2017-11-21'))--TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
+            TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
         WHERE
             TRAFFICSOURCE.MEDIUM = 'linepersonal'
             AND LENGTH(TRAFFICSOURCE.CAMPAIGN) <= 12--2.0はOFFERIDがついていないので
@@ -103,7 +103,7 @@ FROM
             ,TOTALS.TOTALTRANSACTIONREVENUE AS LPN_REVENUE
             ,DATE AS LPN_DATE
         FROM
-            TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('2017-11-21'), TIMESTAMP('2017-11-21'))--TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
+            TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
         WHERE
             TRAFFICSOURCE.MEDIUM = 'linepersonal'
     ) AS LINE_PERSONALIZE_NEW/*PREFIX = LPN*/
@@ -141,7 +141,7 @@ FROM
             ,TOTALS.TOTALTRANSACTIONREVENUE AS LT_REVENUE
             ,DATE AS LT_DATE
         FROM
-            TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('2017-11-21'), TIMESTAMP('2017-11-21'))--TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
+            TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
     ) AS LINE_TIMELINE/*PREFIX = LT*/
     INNER JOIN [durable-binder-547:ZZ_CFM.TAT_PARAMETERMAPPING] AS MAPPING_TABLE ON LT_SOURCE = PM_PARAMETER
     WHERE
@@ -173,7 +173,7 @@ FROM
             ,FULLVISITORID AS LR_FULLVISITORID
             ,TOTALS.TOTALTRANSACTIONREVENUE AS LR_REVENUE
         FROM
-            TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('2017-11-21'), TIMESTAMP('2017-11-21'))--TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
+            TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
     ) AS LINE_RICHMENU/*PREFIX = LR*/
     INNER JOIN [durable-binder-547:ZZ_CFM.TAT_PARAMETERMAPPING] AS MAPPING_TABLE ON LR_SOURCE = PM_PARAMETER
     WHERE
