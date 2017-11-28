@@ -12,7 +12,7 @@ attachments:
   - fields
   fields:
   - title: Session
-    value: "http://10.201.161.10:65432/sessions/${session_id}"
+    value: ${exec_server}/sessions/${session_id}
     short: false
   - title: Task Name
     value: "${task_name}"
@@ -27,5 +27,5 @@ attachments:
     value: "${session_date}"
     short: true
   - title: Environment
-    value: "${ENV}"
+    value: ${exec_env}
     short: true
