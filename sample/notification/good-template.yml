@@ -12,7 +12,7 @@ attachments:
   - fields
   fields:
   - title: Session
-    value: ${exec_server}/sessions/${session_id}
+    value: http://${exec_server}/sessions/${session_id}
     short: false
   - title: Task Name
     value: "${task_name}"
