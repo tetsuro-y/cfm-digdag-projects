@@ -32,13 +32,11 @@ in:
 filters:
   - type: timestamp_format
     default_from_timestamp_format: ["%Y-%m-%d %H:%M:%S"]
-    default_to_timezone: "Asia/Tokyo"
     default_to_timestamp_format: "%Y-%m-%d %H:%M:%S"
     columns:
       - {name: VC_VISITTIME, type: string}
   - type: timestamp_format
     default_from_timestamp_format: ["%Y-%m-%d"]
-    default_to_timezone: "Asia/Tokyo"
     default_to_timestamp_format: "%Y-%m-%d"
     columns:
       - {name: VC_SENDDT, type: string}

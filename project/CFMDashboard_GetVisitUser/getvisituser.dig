@@ -20,7 +20,7 @@ _error:
 
 +get_bqdata:
   _export:
-      ga_start_date: "${bq.start_dt ? bq.start_dt : moment(session_date).subtract(1, 'days').format('YYYY-MM-DD')}"
+      ga_start_date: "${bq.start_dt ? bq.start_dt : moment(session_date).subtract(2, 'days').format('YYYY-MM-DD')}"
       ga_end_date: "${bq.end_dt ? bq.end_dt : moment(session_date).subtract(1, 'days').format('YYYY-MM-DD')}"
 
   +repeat:
