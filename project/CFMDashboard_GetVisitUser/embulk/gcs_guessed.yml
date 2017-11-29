@@ -20,11 +20,11 @@ in:
     columns:
     - {name: VC_VISITTIME, type: timestamp, format: '%Y/%m/%d %H:%M:%S'}
     - {name: VC_SENDDT, type: timestamp, format: '%Y/%m/%d'}
-    - {name: VC_CHANNEL, type: long}
-    - {name: VC_CHANNEL_DETAIL, type: long}
+    - {name: VC_CHANNELID, type: long}
+    - {name: VC_CHANNEL_DETAILID, type: long}
     - {name: VC_CAMPAIGNID, type: long}
-    - {name: VC_DEVICE, type: long}
-    - {name: VC_OS, type: long}
+    - {name: VC_DEVICEID, type: long}
+    - {name: VC_OSID, type: long}
     - {name: VC_EMAILID, type: long}
     - {name: VC_OFFERID, type: long}
     - {name: VC_FULLVISITORID, type: string}
