@@ -31,26 +31,14 @@ SELECT
     ,VC_TRANSACTIONREVENUE
 FROM
 	EXTERNAL '/tmp/embulk/cfmdashboard_getvisituser/CFMDashboard_GetVisitUser.csv'
-USING (DELIM ',' REMOTESOURCE 'JDBC' LOGDIR '/tmp/embulk/puredata/log'); -- skipRows 1
+USING (DELIM ',' REMOTESOURCE 'JDBC' LOGDIR '/tmp/embulk/puredata/log');
 
 DELETE FROM TAT_VIACHANNEL_VISITUSER
 WHERE
-    EXISTS (
-        SELECT
-            1
-        FROM
-            TAT_VIACHANNEL_VISITUSER_TEMP AS TEMP
-            INNER JOIN TAT_VIACHANNEL_VISITUSER AS PD ON TEMP.VC_VISITTIME = PD.VC_VISITTIME
-                                                            AND TEMP.VC_SENDDT = PD.VC_SENDDT
-                                                            AND TEMP.VC_CHANNEL = PD.VC_CHANNEL
-                                                            AND TEMP.VC_CHANNEL_DETAIL = PD.VC_CHANNEL_DETAIL
-                                                            AND TEMP.VC_CAMPAIGNID = PD.VC_CAMPAIGNID
-                                                            AND TEMP.VC_DEVICE = PD.VC_DEVICE
-                                                            AND TEMP.VC_OFFERID = PD.VC_OFFERID
-                                                            AND TEMP.VC_FULLVISITORID = PD.VC_FULLVISITORID
-    )
-    OR VC_VISITTIME < CURRENT_DATE - INTERVAL'2 YEARS'
-;
+    (VC_VISITTIME >= (SELECT MIN(VC_VISITTIME) FROM TAT_VIACHANNEL_VISITUSER_TEMP)
+    AND VC_VISITTIME < (SELECT MAX(VC_VISITTIME)  + INTERVAL'1 SECOND' FROM TAT_VIACHANNEL_VISITUSER_TEMP))
+    OR VC_VISITTIME < CURRENT_DATE - INTERVAL'2 YEARS';
+
 INSERT INTO TAT_VIACHANNEL_VISITUSER
 SELECT
     VC_VISITTIME
@@ -65,7 +53,6 @@ SELECT
     ,VC_FULLVISITORID
     ,VC_TRANSACTIONREVENUE
 FROM
-	TAT_VIACHANNEL_VISITUSER_TEMP
-;
+	TAT_VIACHANNEL_VISITUSER_TEMP;
 
 COMMIT;

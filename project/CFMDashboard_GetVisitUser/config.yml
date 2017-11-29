@@ -7,7 +7,6 @@ bq:
   table_name: CFMDashboard_GetVisitUser_Temp
   destination: gs://stk-bigquery-export/GetVisitUser_*
   query: queries/BQ/GetVisitUser
-  # query: queries/sample.sql
   start_dt:
   end_dt:
 
