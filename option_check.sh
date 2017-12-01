@@ -24,19 +24,15 @@ fi
 # evaluate environment
 if [ "$2" = "10.201.161.10:65432" ]; then
     export DIGDAG_SERVER=10.201.161.10:65432
-    export EXECUTE_ENV=Development
 elif [ "$2" = "10.201.161.10:23456" ]; then
     export DIGDAG_SERVER=10.201.161.10:23456
-    export EXECUTE_ENV=Production
 elif [ "$2" = "localhost:65432" ]; then
     export DIGDAG_SERVER=localhost:65432
-    export EXECUTE_ENV=Development
 elif [ "$2" = "localhost:23456" ]; then
     export DIGDAG_SERVER=localhost:23456
-    export EXECUTE_ENV=Production
 else
     echo "server setting does not exist"
-    exitく
+    exit
 fi
 
 export PJ_NAME=$(basename ${PJ_DIR})
