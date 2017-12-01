@@ -12,7 +12,7 @@ attachments:
   - fields
   fields:
   - title: Session
-    value: http://${exec_server}/sessions/${session_id}
+    value: http://${DIGDAGSERVER_HOST}/sessions/${session_id}
     short: false
   - title: Task Name
     value: "${task_name}"
@@ -27,5 +27,5 @@ attachments:
     value: "${session_date}"
     short: true
   - title: Environment
-    value: ${exec_env}
+    value: ${DIGDAGSERVER_ENV}
     short: true
