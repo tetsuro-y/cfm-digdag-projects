@@ -21,3 +21,7 @@ slack:
   channel: '#cfm_science_team'
   username: digdag
   icon_emoji: ghost
+
+pd:
+  file_path_0: queries/DWH/import
+  file_path_1: queries/DWH/personalize

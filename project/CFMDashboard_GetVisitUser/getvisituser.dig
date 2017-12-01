@@ -61,10 +61,15 @@ _error:
 
   +insert_puredata:
     +load_sql:
-      sh>: java -cp /var/lib/digdag/puredata/nzExecuteSql.jar jp.stk.cfm.ExecuteSqls queries/DWH /var/lib/digdag/puredata/dbconnection.properties
+      sh>: java -cp /var/lib/digdag/puredata/nzExecuteSql.jar jp.stk.cfm.ExecuteSqls ${pd.file_path_0} /var/lib/digdag/puredata/dbconnection.properties
 
     +remove_file:
       sh>: rm -rf ${embulk.file_path}
+
+  # 各チャネルのデータマート更新処理
+  +update_datamart:
+    +load_sql_1:
+      sh>: java -cp /var/lib/digdag/puredata/nzExecuteSql.jar jp.stk.cfm.ExecuteSqls ${pd.file_path_1} /var/lib/digdag/puredata/dbconnection.properties
 
   +teardown:
     echo>: finish ${moment(session_time).utc().format('YYYY-MM-DD HH:mm:ss Z')}
