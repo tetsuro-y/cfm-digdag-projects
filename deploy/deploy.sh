@@ -2,9 +2,7 @@
 
 ROOT_DIR=$(cd $(dirname $0)/../ && pwd)
 
-array=()
-
-changed_file=$(git diff --name-only origin/master^...origin/master | grep -e ^project)
+changed_pj=$(git diff --name-only origin/master^...origin/master | grep -e ^project | cut -d'/' -f 2)
 
 # PJ SETTINGS
 DIGDAG_SERVER_DEV=10.201.161.10:65432
@@ -12,20 +10,11 @@ DIGDAG_SERVER_DEV=10.201.161.10:65432
 
 DIGDAG_SERVER=${DIGDAG_SERVER_DEV}
 
-DEV_SCHEDULES=$(/var/jenkins_home/bin/digdag schedules --endpoint ${DIGDAG_SERVER_DEV})
+DEV_SCHEDULES=$(digdag schedules --endpoint ${DIGDAG_SERVER_DEV})
 
-# check diff from previous master
-for file in ${changed_file}; do
-    may_dir=$(echo ${file} | cut -d'/' -f 2)
-    if [ -d "${ROOT_DIR}/project/${may_dir}" ]; then
-        array=("${array[@]}" "${may_dir}")
-    fi
-done
-
-deploy_list=$(echo ${array} | uniq)
 flag=true
 
-for pjname in ${deploy_list}; do
+for pjname in ${changed_pj}; do
 
     echo ""
     echo "--- ${pjname} ---"
@@ -47,7 +36,7 @@ for pjname in ${deploy_list}; do
     fi
 
     echo "重複するスケジュールは、開発環境に登録されていません。"
-    response=$(/var/jenkins_home/bin/digdag push ${pjname} --project ${pjdir} -r "$(date +%Y-%m-%dT%H:%M:%S%z)" --endpoint ${DIGDAG_SERVER} 2>&1)
+    response=$(digdag push ${pjname} --project ${pjdir} -r "$(date +%Y-%m-%dT%H:%M:%S%z)" --endpoint ${DIGDAG_SERVER} 2>&1)
     # do digdag check
     if [ $? != 0 ]; then
         echo ${response}
@@ -55,10 +44,14 @@ for pjname in ${deploy_list}; do
         exit 1
     fi
 
+    # deployしたプロジェクトリストを書き出す
+    id=$(echo ${response} | grep -o -e "id: [0-9]*" | cut -d ' ' -f 2)
+    echo "${pjname}のPUSHは成功しました。"
+    echo "http://${DIGDAG_SERVER}/projects/${id}/workflows/${pjname}"
+
     # bigqueryのアクセスキーを設定します
-    echo "BigQuery用のシークレットキーを登録しています"
-    cp /tmp/zozo-e62ae29b6c4f_cfm.json .
-    secret=$(/var/jenkins_home/bin/digdag secrets --project ${pjname} --set gcp.credential=@zozo-e62ae29b6c4f_cfm.json --endpoint ${DIGDAG_SERVER} 2>&1)
+    cp /usr/local/.credential/gcpcredential.json .
+    secret=$(digdag secrets --project ${pjname} --set gcp.credential=@gcpcredential.json --endpoint ${DIGDAG_SERVER} 2>&1)
 
     # register secret key
     if [ $? != 0 ]; then
@@ -66,9 +59,9 @@ for pjname in ${deploy_list}; do
         echo "${pjname}へGCPのJson keyの登録に失敗しました"
         exit 1
     fi
-    rm zozo-e62ae29b6c4f_cfm.json
 
-    echo "${pjname}のPUSHは成功しました。"
+    echo "BigQuery用のシークレットキーを登録しました"
+    rm gcpcredential.json
 
     flag=false
 done

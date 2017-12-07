@@ -6,7 +6,7 @@ ROOT_DIR=$(cd $(dirname $0)/../ && pwd)
 # PJ SETTINGS
 DIGDAG_SERVER_DEV=10.201.161.10:65432
 
-DEV_SCHEDULES=$(/var/jenkins_home/bin/digdag schedules --endpoint ${DIGDAG_SERVER_DEV})
+DEV_SCHEDULES=$(digdag schedules --endpoint ${DIGDAG_SERVER_DEV})
 
 flag=true
 
@@ -24,7 +24,7 @@ for pjname in $(ls ${ROOT_DIR}/project); do
     }
 
     echo ".digファイルのテストを実行します"
-    response=$(/var/jenkins_home/bin/digdag check ${digfile} --project ${pjdir} 2>&1)
+    response=$(digdag check ${digfile} --project ${pjdir} 2>&1)
 
     # do digdag check
     if [ $? != 0 ]; then
@@ -43,7 +43,6 @@ for pjname in $(ls ${ROOT_DIR}/project); do
     fi
 
     echo "重複するスケジュールは、開発環境に登録されていません。"
-
     echo "${pjname}のCHECKは成功しました。"
 
     flag=false
