@@ -42,11 +42,6 @@ FROM
     INNER JOIN [durable-binder-547:ZZ_CFM.TAT_DB_MASTER_PARAMETER_MAPPING] AS MAPPING_TABLE ON MPO_SOURCE = MPM_PARAMETER
     WHERE
         MPO_DEVICE IN ('PC', 'MO')
-        AND (
-        REGEXP_MATCH(MPO_SOURCE, R'^C[0-9]{9}')--Cから始まるキャンペーンコード
-        OR
-        REGEXP_MATCH(MPO_SOURCE, R'^[0-9]')--数字のみ
-        )
         AND DATEDIFF(MPO_DATE, MPO_SENDDT) >= 0
         AND DATEDIFF(MPO_DATE, MPO_SENDDT) <= 7--配信から7日以内の流入に絞る
     GROUP EACH BY
@@ -91,7 +86,7 @@ FROM
         AND DATEDIFF(MPN_DATE, MPN_SENDDT) >= 0
         AND DATEDIFF(MPN_DATE, MPN_SENDDT) <= 7--配信から7日以内の流入に絞る
         AND INTEGER(MPN_CAMPAIGNID) IS NOT NULL
-        AND INTEGER(MPN_OFFERID) IS NOT NULL--デバイスは1行目で1か2に絞る条件を入れているのでNULLかどうかの条件は不要
+        AND INTEGER(MPN_OFFERID) IS NOT NULL
     GROUP EACH BY
         HVU_VISITTIME
         ,HVU_SENDDT
