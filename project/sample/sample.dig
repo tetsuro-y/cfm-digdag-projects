@@ -5,7 +5,7 @@ timezone: Asia/Tokyo
 
 _export:
   wf:
-    name: Sample Digdag Workflow using Pure & Bigquery
+    name: Sample Digdag Workflow using Pure & Bigquery Test
 
   bq:
     dataset_name: temp

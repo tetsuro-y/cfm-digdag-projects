@@ -11,19 +11,19 @@ DEV_SCHEDULES=$(digdag schedules --endpoint ${DIGDAG_SERVER_DEV})
 flag=true
 
 # check test target project
-for pjname in $(ls ${ROOT_DIR}/project); do
+for pjname in $(ls ${ROOT_DIR}/project | uniq); do
     echo ""
     echo "--- ${pjname} ---"
 
     # find workflow file
     pjdir=${ROOT_DIR}/project/${pjname}
     digfile=${pjdir}/${pjname}.dig
-    ls ${digfile} || {
+    command=$(ls ${digfile})
+    if [ $? != 0 ]; then
         echo "自動デプロイのための $(basename ${digfile}) が見つかりませんでした"
         exit 1
-    }
+    fi
 
-    echo ".digファイルのテストを実行します"
     response=$(digdag check ${digfile} --project ${pjdir} 2>&1)
 
     # do digdag check

@@ -2,7 +2,7 @@
 
 ROOT_DIR=$(cd $(dirname $0)/../ && pwd)
 
-changed_pj=$(git diff --name-only origin/master^...origin/master | grep -e ^project | cut -d'/' -f 2)
+changed_pj=$(git diff --name-only origin/master^...origin/master | grep -e ^project | cut -d'/' -f 2 | uniq)
 
 # PJ SETTINGS
 DIGDAG_SERVER_DEV=10.201.161.10:65432
@@ -22,10 +22,11 @@ for pjname in ${changed_pj}; do
     # find workflow file
     pjdir=${ROOT_DIR}/project/${pjname}
     digfile=${pjdir}/${pjname}.dig
-    ls ${digfile} || {
+    command=$(ls ${digfile})
+    if [ $? != 0 ]; then
         echo "自動デプロイのための $(basename ${digfile}) が見つかりませんでした"
         exit 1
-    }
+    fi
 
     # check schedule with dev
     line=$(echo ${DEV_SCHEDULES} | grep -o -e "id: [0-9]* project: ${pjname} workflow: ${pjname}" | wc -l | awk '{print $1}')
