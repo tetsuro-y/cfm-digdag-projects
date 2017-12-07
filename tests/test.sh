@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash -xe
 
 # PJ PATH
 ROOT_DIR=$(cd $(dirname $0)/../ && pwd)
