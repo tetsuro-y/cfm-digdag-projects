@@ -42,7 +42,11 @@ FROM
     INNER JOIN [durable-binder-547:ZZ_CFM.TAT_DB_MASTER_PARAMETER_MAPPING] AS MAPPING_TABLE ON MPO_SOURCE = MPM_PARAMETER
     WHERE
         MPO_DEVICE IN ('PC', 'MO')
-        AND REGEXP_MATCH(MPO_SOURCE, R'^C[0-9]{9}')--Cから始まるキャンペーンコード
+        AND (
+        REGEXP_MATCH(MPO_SOURCE, R'^C[0-9]{9}')--Cから始まるキャンペーンコード
+        OR
+        REGEXP_MATCH(MPO_SOURCE, R'^[0-9]')--数字のみ
+        )
         AND DATEDIFF(MPO_DATE, MPO_SENDDT) >= 0
         AND DATEDIFF(MPO_DATE, MPO_SENDDT) <= 7--配信から7日以内の流入に絞る
     GROUP EACH BY
