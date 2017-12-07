@@ -18,28 +18,28 @@ in:
     allow_extra_columns: false
     allow_optional_columns: false
     columns:
-    - {name: VC_VISITTIME, type: timestamp, format: '%Y/%m/%d %H:%M:%S'}
-    - {name: VC_SENDDT, type: timestamp, format: '%Y/%m/%d'}
-    - {name: VC_CHANNELID, type: long}
-    - {name: VC_CHANNEL_DETAILID, type: long}
-    - {name: VC_CAMPAIGNID, type: long}
-    - {name: VC_DEVICEID, type: long}
-    - {name: VC_OSID, type: long}
-    - {name: VC_EMAILID, type: long}
-    - {name: VC_OFFERID, type: long}
-    - {name: VC_FULLVISITORID, type: string}
-    - {name: VC_REVENUE, type: long}
+    - {name: HVU_SENDDT, type: timestamp, format: '%Y/%m/%d'}
+    - {name: HVU_CHANNELID, type: long}
+    - {name: HVU_CHANNEL_DETAILID, type: long}
+    - {name: HVU_CAMPAIGNID, type: long}
+    - {name: HVU_DEVICEID, type: long}
+    - {name: HVU_OSID, type: long}
+    - {name: HVU_FULLVISITORID, type: string}
+    - {name: HVU_EMAILID, type: long}
+    - {name: HVU_OFFERID, type: long}
+    - {name: HVU_VISITTIME, type: timestamp, format: '%Y/%m/%d %H:%M:%S'}
+    - {name: HVU_REVENUE, type: long}
 filters:
   - type: timestamp_format
     default_from_timestamp_format: ["%Y-%m-%d %H:%M:%S"]
     default_to_timestamp_format: "%Y-%m-%d %H:%M:%S"
     columns:
-      - {name: VC_VISITTIME, type: string}
+      - {name: HVU_VISITTIME, type: string}
   - type: timestamp_format
     default_from_timestamp_format: ["%Y-%m-%d"]
     default_to_timestamp_format: "%Y-%m-%d"
     columns:
-      - {name: VC_SENDDT, type: string}
+      - {name: HVU_SENDDT, type: string}
 out:
   type: file
   path_prefix: ${embulk.file_path}/${embulk.file_prefix}
