@@ -22,10 +22,11 @@ for pjname in ${changed_pj}; do
     # find workflow file
     pjdir=${ROOT_DIR}/project/${pjname}
     digfile=${pjdir}/${pjname}.dig
-    ls ${digfile} > /dev/null 2&>1 || {
+    command=$(ls ${digfile})
+    if [ $? != 0 ]; then
         echo "自動デプロイのための $(basename ${digfile}) が見つかりませんでした"
         exit 1
-    }
+    fi
 
     # check schedule with dev
     line=$(echo ${DEV_SCHEDULES} | grep -o -e "id: [0-9]* project: ${pjname} workflow: ${pjname}" | wc -l | awk '{print $1}')

@@ -18,10 +18,11 @@ for pjname in $(ls ${ROOT_DIR}/project | uniq); do
     # find workflow file
     pjdir=${ROOT_DIR}/project/${pjname}
     digfile=${pjdir}/${pjname}.dig
-    ls ${digfile} > /dev/null 2&>1 || {
+    command=$(ls ${digfile})
+    if [ $? != 0 ]; then
         echo "自動デプロイのための $(basename ${digfile}) が見つかりませんでした"
         exit 1
-    }
+    fi
 
     response=$(digdag check ${digfile} --project ${pjdir} 2>&1)
 
