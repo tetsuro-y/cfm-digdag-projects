@@ -1,7 +1,7 @@
 import groovy.json.JsonOutput
 
 def notifySlack(text, channel, attachments) {
-    def slackURL = 'https://hooks.slack.com/services/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'
+    def slackURL = 'https://hooks.slack.com/services/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'
     def jenkinsIcon = 'https://wiki.jenkins-ci.org/download/attachments/2916393/logo.png'
 
     def payload = JsonOutput.toJson([text: text,
@@ -21,13 +21,13 @@ def getLastCommitMessage = {
 def getGitAuthor = {
     def commit = sh(returnStdout: true, script: 'git rev-parse HEAD')
     msg = sh(returnStdout: true, script: "git --no-pager show -s --format='%an' ${commit}").trim()
-    url = "http://10.201.161.46:8084/jenkins/node_test/commit/${commit}"
+    url = "http://10.201.161.10:8084/CFM/AutoDigdagProject/commit/${commit}"
     return msg + '\n' + url
 }
 
 node {
     stage('Checkout') {
-        git url: env.GITBUCKET_URL + "/jenkins/node_test.git", branch: env.BRANCH_NAME
+        git url: env.GITBUCKET_URL + "/CFM/AutoDigdagProject.git", branch: env.BRANCH_NAME
     }
 
     stage('Build') {
@@ -56,7 +56,7 @@ node {
             def message = getLastCommitMessage();
             def buildColor = currentBuild.result == "SUCCESS" ? "good" : "danger"
             def author = getGitAuthor();
-            def slackNotificationChannel = '#cfm_science_team'
+            def slackNotificationChannel = '#cfm_team'
 
             if(fileExists('./buildmessage')) {
                 buildmessage = readFile('./buildmessage').trim()
