@@ -6,9 +6,9 @@ changed_pj=$(git diff --name-only origin/master^...origin/master | grep -e ^proj
 
 # PJ SETTINGS
 DIGDAG_SERVER_DEV=10.201.161.10:65432
-# DIGDAG_SERVER_PRD=10.201.161.10:23456
+DIGDAG_SERVER_PRD=10.201.161.10:23456
 
-DIGDAG_SERVER=${DIGDAG_SERVER_DEV}
+DIGDAG_SERVER=${DIGDAG_SERVER_PRD}
 
 DEV_SCHEDULES=$(digdag schedules --endpoint ${DIGDAG_SERVER_DEV})
 
