@@ -48,7 +48,7 @@ SELECT
     ,MMDD.EMAILID AS TD_EMAILID
     ,1 AS TD_CHANNELID--メール
     ,CASE
-        WHEN MMD.MOBILEFLAG = 0 THEN  2--PCの場合は3.0とあわせて2とする
+        WHEN MMD.MOBILEFLAG = 0 THEN 2--PCの場合は3.0とあわせて2とする
         ELSE MMD.MOBILEFLAG
     END AS TD_DEVICEID
     ,MMD.DELIVERYDT AS TD_SENDDT
@@ -647,7 +647,7 @@ FROM
                                     AND THD_CHANNELID = THC_CHANNELID
                                     AND THD_CAMPAIGNID = THC_CAMPAIGNID
                                     AND THD_DEVICEID = THC_DEVICEID
-    INNER JOIN    TAT_DB_RESULT_HOURLY_TMP_HOURLY_BUYITEM ON THD_HOUR = THB_HOUR
+    INNER JOIN TAT_DB_RESULT_HOURLY_TMP_HOURLY_BUYITEM ON THD_HOUR = THB_HOUR
                                     AND THD_CHANNELID = THB_CHANNELID
                                     AND THD_CAMPAIGNID = THB_CAMPAIGNID
                                     AND THD_DEVICEID = THB_DEVICEID
