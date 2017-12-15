@@ -1,7 +1,7 @@
 timezone: Asia/Tokyo
 
 schedule:
-  daily>: 07:00:00
+  daily>: 08:30:00
 
 _export:
   wf:
