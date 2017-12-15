@@ -1,11 +1,11 @@
 timezone: Asia/Tokyo
 
-#schedule:
-#  daily>: 07:00:00
+schedule:
+  daily>: 12:46:00
 
 _export:
   wf:
-    name: Sample Digdag Workflow using Pure & Bigquery
+    name: Sample Digdag Workflow using Pure & Bigquery Test
 
   bq:
     dataset_name: temp
