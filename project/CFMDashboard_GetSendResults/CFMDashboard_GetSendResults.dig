@@ -1,0 +1,119 @@
+timezone: Asia/Tokyo
+
+schedule:
+  daily>: 08:30:00
+
+_export:
+  wf:
+    name: Digdag Workflow to get visit user & insert send results
+
+  bq:
+    dataset_name: temp
+    table_name: CFMDashboard_GetVisitUser_Temp
+    destination: gs://stk-bigquery-export/GetVisitUser_*
+    query: queries/BQ/GetVisitUser
+    start_dt:
+    end_dt:
+
+  embulk:
+    file_path: /tmp/embulk/cfmdashboard_getvisituser
+    file_prefix: CFMDashboard_GetVisitUser_Temp_
+    out_file: CFMDashboard_GetVisitUser.csv
+    key_file_path: /var/lib/digdag/.credential/gcpcredential.json
+
+  pure:
+    jar: /var/lib/digdag/puredata/nzExecuteSql.jar
+    class: jp.stk.cfm.ExecuteSqls
+    properties: /var/lib/digdag/puredata/dbconnection.properties
+    file_path_0: queries/DWH/import
+    file_path_1: queries/DWH/personalize
+
+  my_param:
+    - DIGDAGSERVER_HOST
+    - DIGDAGSERVER_ENV
+
+  slack:
+    webhook: https://hooks.slack.com/services/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
+    channel: '#cfm_science_team'
+    username: digdag
+    icon_emoji: ghost
+    template_path: notification
+    good: good-template.yml
+    danger: danger-template.yml
+
+  plugin:
+    repositories:
+      - https://jitpack.io
+    dependencies:
+      - com.github.szyn:digdag-slack:0.1.2
+  # Set Reqired params
+  webhook_url: ${slack.webhook}
+  # Set Option params
+  workflow_name: ${wf.name}
+
++prepare_environments:
+  py>: tasks.PrepareEnviroments.set_parameters
+
+_error:
+  slack>: ${slack.template_path}/${slack.danger}
+
++start:
+  echo>: start ${moment(session_time).utc().format('YYYY-MM-DD HH:mm:ss Z')}
+
++get_bqdata:
+  _export:
+      ga_start_date: "${bq.start_dt ? bq.start_dt : moment(session_date).subtract(2, 'days').format('YYYY-MM-DD')}"
+      ga_end_date: "${bq.end_dt ? bq.end_dt : moment(session_date).subtract(1, 'days').format('YYYY-MM-DD')}"
+
+  +repeat:
+    loop>: 7
+    _do:
+      +pre_delete:
+        bq_ddl>:
+        delete_tables:
+          - ${bq.dataset_name}.${bq.table_name}${i}
+
+      +create_select:
+        bq>: ${bq.query}${i}.sql
+        use_legacy_sql: true
+        allow_large_results: true
+        dataset: ${bq.dataset_name}
+        destination_table: ${bq.table_name}${i}
+
+      +extract_file:
+        bq_extract>: ${bq.dataset_name}.${bq.table_name}${i}
+        destination: ${bq.destination}${i}.csv.gz
+        compression: GZIP
+        destination_format: CSV
+
+      +post_delete:
+        bq_ddl>:
+        delete_tables:
+          - ${bq.dataset_name}.${bq.table_name}${i}
+
+  +download_file:
+    +prepare_dir:
+      sh>: mkdir -p ${embulk.file_path}
+
+    +download_local:
+      embulk>: embulk/gcs_guessed.yml
+
+    +merge_file:
+      sh>: cat ${embulk.file_path}/${embulk.file_prefix}* > ${embulk.file_path}/${embulk.out_file} && rm -r ${embulk.file_path}/${embulk.file_prefix}*
+
+  +insert_puredata:
+    +load_sql:
+      sh>: java -cp ${pure.jar} ${pure.class} ${pure.file_path_0} ${pure.properties}
+
+    +remove_file:
+      sh>: rm -rf ${embulk.file_path}
+
+  # 各チャネルのデータマート更新処理
+  +update_datamart:
+    +load_sql_1:
+      sh>: java -cp ${pure.jar} ${pure.class} ${pure.file_path_1} ${pure.properties}
+
+  +teardown:
+    echo>: finish ${moment(session_time).utc().format('YYYY-MM-DD HH:mm:ss Z')}
+    _check:
+      slack>: ${slack.template_path}/${slack.good}
