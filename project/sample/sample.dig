@@ -1,7 +1,7 @@
 timezone: Asia/Tokyo
 
-schedule:
-  daily>: 12:46:00
+#schedule:
+#  daily>: 12:46:00
 
 _export:
   wf:
@@ -60,7 +60,7 @@ _error:
 
 +create_table:
   +pre_delete_gcs_file:
-    sh>: gsutil rm -rf ${bq.destination}
+    sh>: gsutil rm -rf ${bq.destination} || echo "no target file at the bucket"
 
   +pre_delete:
     bq_ddl>:
@@ -97,7 +97,7 @@ _error:
     sh>: cat ${embulk.file_path}/${embulk.file_prefix}* > ${embulk.file_path}/${embulk.out_file} && rm -r ${embulk.file_path}/${embulk.file_prefix}*
 
   +post_delete_gcs_file:
-    sh>: gsutil rm -rf ${bq.destination}
+    sh>: gsutil rm -rf ${bq.destination} || echo "no target file at the bucket"
 
 +insert_puredata:
   +load_sql:
