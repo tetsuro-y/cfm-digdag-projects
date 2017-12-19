@@ -1,0 +1,31 @@
+---
+username: ${slack.username}
+icon_emoji: ':cry:'
+channel: ${slack.channel}
+attachments:
+- fallback: '[FAILED] ${workflow_name} workflow'
+  color: "danger"
+  text: '*[FAILED]* `${workflow_name}` Workflow'
+  mrkdwn_in:
+  - text
+  - pretext
+  - fields
+  fields:
+  - title: Session
+    value: http://${DIGDAGSERVER_HOST}/sessions/${session_id}
+    short: false
+  - title: Task Name
+    value: "${task_name}"
+    short: false
+  - title: Error Message
+    value: "`${error.message}`"
+    short: false
+  - title: StackTrace
+    value: "```${error.stacktrace}```"
+    short: false
+  - title: Session Date
+    value: "${session_date}"
+    short: true
+  - title: Environment
+    value: ${DIGDAGSERVER_ENV}
+    short: true
