@@ -1,7 +1,7 @@
 timezone: Asia/Tokyo
 
-schedule:
-  daily>: 12:46:00
+#schedule:
+#  daily>: 12:46:00
 
 _export:
   wf:
@@ -59,6 +59,9 @@ _error:
   echo>: start ${moment(session_time).utc().format('YYYY-MM-DD HH:mm:ss Z')}
 
 +create_table:
+  +pre_delete_gcs_file:
+    sh>: gsutil rm -rf ${bq.destination} || echo "no target file at the bucket"
+
   +pre_delete:
     bq_ddl>:
     delete_tables:
@@ -92,6 +95,9 @@ _error:
 
   +merge_file:
     sh>: cat ${embulk.file_path}/${embulk.file_prefix}* > ${embulk.file_path}/${embulk.out_file} && rm -r ${embulk.file_path}/${embulk.file_prefix}*
+
+  +post_delete_gcs_file:
+    sh>: gsutil rm -rf ${bq.destination} || echo "no target file at the bucket"
 
 +insert_puredata:
   +load_sql:
