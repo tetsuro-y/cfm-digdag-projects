@@ -65,6 +65,9 @@ _error:
       ga_start_date: "${bq.start_dt ? bq.start_dt : moment(session_date).subtract(2, 'days').format('YYYY-MM-DD')}"
       ga_end_date: "${bq.end_dt ? bq.end_dt : moment(session_date).subtract(1, 'days').format('YYYY-MM-DD')}"
 
+  +pre_delete_gcs_file:
+    sh>: gsutil rm -rf ${bq.destination} || echo "no target file at the bucket"
+
   +repeat:
     loop>: 7
     _do:
@@ -100,6 +103,9 @@ _error:
 
     +merge_file:
       sh>: cat ${embulk.file_path}/${embulk.file_prefix}* > ${embulk.file_path}/${embulk.out_file} && rm -r ${embulk.file_path}/${embulk.file_prefix}*
+
+    +post_delete_gcs_file:
+      sh>: gsutil rm -rf ${bq.destination} || echo "no target file at the bucket"
 
   +insert_puredata:
     +load_sql:
