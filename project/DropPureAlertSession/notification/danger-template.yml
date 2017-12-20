@@ -24,7 +24,7 @@ attachments:
     value: "```${error.stacktrace}```"
     short: false
   - title: Session Date
-    value: "${session_date}"
+    value: "${moment(session_time).utc().format('YYYY-MM-DD HH:mm:ss Z')}"
     short: true
   - title: Environment
     value: ${DIGDAGSERVER_ENV}
