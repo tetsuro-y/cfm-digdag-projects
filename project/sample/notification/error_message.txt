@@ -1,3 +1,0 @@
-Digdagのワークフロー ${workflow_name} が失敗しました
-Error: `${error_message}`
-StackTrace: ```${error_stacktrace}```
