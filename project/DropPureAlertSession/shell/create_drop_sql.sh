@@ -46,7 +46,7 @@ cat ${filepath} | while read line; do
     summary="${tab_line[4]}"
     duration="${tab_line[5]}"
 
-    message="{\"title\":\"SESSION\", \"value\":\"${session_num}\", \"short\":true}, {\"title\":\"USERNAME\", \"value\":\"${username}\", \"short\":true}, {\"title\":\"EXECUTION\", \"value\":\"${execute_time}\", \"short\":true}, {\"title\":\"DB\", \"value\":\"${dbname}\", \"short\":true}, {\"title\":\"DURATION\", \"value\":\"${duration}\", \"short\":true}, {\"title\":\"WORKFLOW\", \"value\":\"http://${DIGDAGSERVER_HOST}/sessions/${WORKFLOW_SESSION}\", \"short\":false}, {\"title\":\"QUERY SUMMARY\", \"value\":\" \`\`\` ${summary} \`\`\` \", \"short\":false}"
+    message="{\"title\":\"SESSION\", \"value\":\"${session_num}\", \"short\":true}, {\"title\":\"USERNAME\", \"value\":\"${username}\", \"short\":true}, {\"title\":\"EXECUTION\", \"value\":\"${execute_time}\", \"short\":true}, {\"title\":\"DB\", \"value\":\"${dbname}\", \"short\":true}, {\"title\":\"DURATION\", \"value\":\"${duration} sec\", \"short\":true}, {\"title\":\"WORKFLOW\", \"value\":\"http://${DIGDAGSERVER_HOST}/sessions/${WORKFLOW_SESSION}\", \"short\":false}, {\"title\":\"QUERY SUMMARY\", \"value\":\" \`\`\` ${summary} \`\`\` \", \"short\":false}"
     payload="{\"text\":\"*下記のクエリはアラート条件に一致したためKillされました*\", \"channel\":\"$(echo ${slack} | jq -r .channel)\",\"username\":\"PureData Drop Session Notification\", \"attachments\":[{\"color\":\"warning\",\"fields\":[${message}],\"mrkdwn_in\":[\"fields\", \"text\"]}]}"
 
     # send slack message
