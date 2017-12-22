@@ -1,8 +1,5 @@
 timezone: Asia/Tokyo
 
-schedule:
-  daily>: 08:30:00
-
 _export:
   wf:
     name: Digdag Workflow to get visit user & insert send results
@@ -12,8 +9,6 @@ _export:
     table_name: CFMDashboard_GetVisitUser_Temp
     destination: gs://stk-bigquery-export/GetVisitUser_*
     query: queries/BQ/GetVisitUser
-    start_dt:
-    end_dt:
 
   embulk:
     file_path: /tmp/embulk/cfmdashboard_getvisituser
@@ -22,7 +17,7 @@ _export:
     key_file_path: /var/lib/digdag/.credential/gcpcredential.json
 
   pure:
-    jar: /var/lib/digdag/puredata/nzExecuteSql.jar
+    jar: /var/lib/digdag/puredata/nzExecuteSql-1.0.1.jar
     class: jp.stk.cfm.ExecuteSqls
     properties: /var/lib/digdag/puredata/dbconnection.properties
     file_path_0: queries/DWH/import
@@ -58,12 +53,13 @@ _error:
   slack>: ${slack.template_path}/${slack.danger}
 
 +start:
-  echo>: start ${moment(session_time).utc().format('YYYY-MM-DD HH:mm:ss Z')}
+  echo>: start ${moment(session_time).format('YYYY-MM-DD HH:mm:ss Z')}
 
 +get_bqdata:
   _export:
-      ga_start_date: "${bq.start_dt ? bq.start_dt : moment(session_date).subtract(2, 'days').format('YYYY-MM-DD')}"
-      ga_end_date: "${bq.end_dt ? bq.end_dt : moment(session_date).subtract(1, 'days').format('YYYY-MM-DD')}"
+      ga_start_date: "${ex_bg_start_dt ? ex_bg_start_dt : moment(session_date).subtract(2, 'days').format('YYYY-MM-DD')}"
+      ga_end_date: "${ex_bg_end_dt ? ex_bg_end_dt : moment(session_date).subtract(1, 'days').format('YYYY-MM-DD')}"
+      pd_base_date: "${ex_pd_base_dt ? ex_pd_base_dt : moment(session_date).format('YYYY/MM/DD') }"
 
   +pre_delete_gcs_file:
     sh>: gsutil rm -rf ${bq.destination} || echo "no target file at the bucket"
@@ -120,6 +116,6 @@ _error:
       sh>: java -cp ${pure.jar} ${pure.class} ${pure.file_path_1} ${pure.properties}
 
   +teardown:
-    echo>: finish ${moment(session_time).utc().format('YYYY-MM-DD HH:mm:ss Z')}
+    echo>: finish ${moment(session_time).format('YYYY-MM-DD HH:mm:ss Z')}
     _check:
       slack>: ${slack.template_path}/${slack.good}

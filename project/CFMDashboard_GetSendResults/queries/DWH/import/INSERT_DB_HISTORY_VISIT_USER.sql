@@ -30,7 +30,7 @@ SELECT
     ,HVU_VISITTIME
     ,HVU_REVENUE
 FROM
-	EXTERNAL '/tmp/embulk/cfmdashboard_getvisituser/CFMDashboard_GetVisitUser.csv'
+	EXTERNAL '${embulk.file_path}/${embulk.out_file}'
 USING (DELIM ',' REMOTESOURCE 'JDBC' LOGDIR '/tmp/embulk/puredata/log');
 
 DELETE FROM TAT_DB_HISTORY_VISIT_USER
