@@ -53,13 +53,13 @@ _error:
   slack>: ${slack.template_path}/${slack.danger}
 
 +start:
-  echo>: start ${moment(session_time).utc().format('YYYY-MM-DD HH:mm:ss Z')}
+  echo>: start ${moment(session_time).format('YYYY-MM-DD HH:mm:ss Z')}
 
 +get_bqdata:
   _export:
       ga_start_date: "${ex_bg_start_dt ? ex_bg_start_dt : moment(session_date).subtract(2, 'days').format('YYYY-MM-DD')}"
       ga_end_date: "${ex_bg_end_dt ? ex_bg_end_dt : moment(session_date).subtract(1, 'days').format('YYYY-MM-DD')}"
-      pd_base_date: "${ex_pure_base_dt ? ex_pure_base_dt : \"CURRENT_DATE\" }"
+      pd_base_date: "${ex_pd_base_dt ? ex_pd_base_dt : moment(session_date).format('YYYY/MM/DD') }"
 
   +pre_delete_gcs_file:
     sh>: gsutil rm -rf ${bq.destination} || echo "no target file at the bucket"
@@ -116,6 +116,6 @@ _error:
       sh>: java -cp ${pure.jar} ${pure.class} ${pure.file_path_1} ${pure.properties}
 
   +teardown:
-    echo>: finish ${moment(session_time).utc().format('YYYY-MM-DD HH:mm:ss Z')}
+    echo>: finish ${moment(session_time).format('YYYY-MM-DD HH:mm:ss Z')}
     _check:
       slack>: ${slack.template_path}/${slack.good}
