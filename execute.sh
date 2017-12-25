@@ -13,6 +13,7 @@ esac
 
 if [ "${machine}" = "cygwin"  ] || [ "${machine}" = "mingw"  ]; then
     DIGDAG=digdag.bat
+    PJ_NAME=$(echo ${PJ_NAME} | sed -e 's/^\///' -e 's/\//\\/g' -e 's/^./\0:/')
 else
     DIGDAG=digdag
 fi
