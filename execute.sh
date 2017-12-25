@@ -26,7 +26,7 @@ echo "${DIGDAG} push ${PJ_NAME} --project ${PJ_DIR} -r "$(date +%Y-%m-%dT%H:%M:%
 
 # bigqueryのアクセスキーを設定します
 echo "cp ${KEY_PATH} ."
-filename=$(ls | grep -e zozo -e json | head -1)
+filename=$(basename ${KEY_PATH} | grep -e zozo -e json | head -1)
 
 if [ "${machine}" = "cygwin"  ] || [ "${machine}" = "mingw"  ]; then
     echo "cmd.exe /c \"digdag secrets --project ${PJ_NAME} --set \\\"gcp.credential=@${filename}\\\" --endpoint ${DIGDAG_SERVER}\""
