@@ -6,18 +6,18 @@ export MSYS_NO_PATHCONV=1
 
 # evaluate parameters
 if [ $# -lt 2 ]; then
-    echo "[ERROR] Invalid num of parameter. Should be 1) path, 2) server, 3...) options."
+    echo "[ERROR] Invalid num of parameter. Should be 1) path, 2) server, 3...) options." >&2
     exit
 fi
 
 # evaluate project path
 if ls $1/*.dig 1> /dev/null 2>&1; then
-    echo ".dig file for project exists"
+    # echo ".dig file for project exists"
 
     # get project dir
     PJ_DIR=$(cd $(dirname $1/dummy) && pwd)
 else
-    echo "files do not exist"
+    echo "files do not exist" >&2
     exit
 fi
 
@@ -31,7 +31,7 @@ elif [ "$2" = "localhost:65432" ]; then
 elif [ "$2" = "localhost:23456" ]; then
     export DIGDAG_SERVER=localhost:23456
 else
-    echo "server setting does not exist"
+    echo "server setting does not exist" >&2
     exit
 fi
 
@@ -41,7 +41,7 @@ fi
 
 export PJ_NAME=$(basename ${PJ_DIR})
 
-echo PJ_DIR=${PJ_DIR}
-echo PJ_NAME=${PJ_NAME}
-echo DIGDAG_SERVER=${DIGDAG_SERVER}
-echo PJ_OPTION=${PJ_OPTION}
+#echo PJ_DIR=${PJ_DIR}
+#echo PJ_NAME=${PJ_NAME}
+#echo DIGDAG_SERVER=${DIGDAG_SERVER}
+#echo PJ_OPTION=${PJ_OPTION}
