@@ -21,7 +21,7 @@ fi
 echo "#!/usr/bin/env bash"
 
 # プロジェクトの登録
-echo "${DIGDAG} push ${PJ_NAME} --project ${PJ_DIR} -r "$(date +%Y-%m-%dT%H:%M:%S%z)" --endpoint ${DIGDAG_SERVER}"
+echo "${DIGDAG} push ${PJ_NAME} --project ${PJ_DIR} -r \"\$(date +%Y-%m-%dT%H:%M:%S%z)\" --endpoint ${DIGDAG_SERVER}"
 #${DIGDAG} push ${PJ_NAME} --project ${PJ_DIR} -r "$(date +%Y-%m-%dT%H:%M:%S%z)" --endpoint ${DIGDAG_SERVER} || exit 1
 
 # bigqueryのアクセスキーを設定します
