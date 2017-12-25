@@ -27,7 +27,7 @@ echo "${DIGDAG} push ${PJ_NAME} --project ${PJ_DIR} -r "$(date +%Y-%m-%dT%H:%M:%
 echo "cp ~/git/zozo-e62ae29b6c4f_cfm.json ."
 
 if [ "${machine}" = "cygwin"  ] || [ "${machine}" = "mingw"  ]; then
-    echo "cmd.exe \c \"digdag secrets --project ${PJ_NAME} --set \\\"gcp.credential=@zozo-e62ae29b6c4f_cfm.json\\\" --endpoint ${DIGDAG_SERVER}\""
+    echo "cmd.exe /c \"digdag secrets --project ${PJ_NAME} --set \\\"gcp.credential=@zozo-e62ae29b6c4f_cfm.json\\\" --endpoint ${DIGDAG_SERVER}\""
 else
     echo "${DIGDAG} secrets --project ${PJ_NAME} --set gcp.credential=@zozo-e62ae29b6c4f_cfm.json --endpoint ${DIGDAG_SERVER}"
 fi
