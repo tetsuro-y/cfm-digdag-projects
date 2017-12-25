@@ -11,6 +11,12 @@ case "$(uname -s)" in
     *)          machine="other"
 esac
 
+if [ "${machine}" = "cygwin"  ] || [ "${machine}" = "mingw"  ]; then
+    DIGDAG=digdag.bat
+else
+    DIGDAG=digdag
+fi
+
 echo "#!/usr/bin/env bash"
 
 # プロジェクトの登録
