@@ -5,8 +5,8 @@ export MSYS2_ARG_CONV_EXCL="*"
 export MSYS_NO_PATHCONV=1
 
 # evaluate parameters
-if [ $# -ne 2 ]; then
-    echo "[ERROR] Invalid num of parameter. Should be 1) path, 2) server."
+if [ $# -lt 2 ]; then
+    echo "[ERROR] Invalid num of parameter. Should be 1) path, 2) server, 3...) options."
     exit
 fi
 
@@ -35,8 +35,13 @@ else
     exit
 fi
 
+if [ $# -gt 2 ]; then
+    PJ_OPTION=${@:3:($#-2)}
+fi
+
 export PJ_NAME=$(basename ${PJ_DIR})
 
 echo PJ_DIR=${PJ_DIR}
 echo PJ_NAME=${PJ_NAME}
 echo DIGDAG_SERVER=${DIGDAG_SERVER}
+echo PJ_OPTION=${PJ_OPTION}

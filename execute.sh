@@ -12,5 +12,5 @@ digdag secrets --project ${PJ_NAME} --set gcp.credential=@zozo-e62ae29b6c4f_cfm.
 rm zozo-e62ae29b6c4f_cfm.json
 
 # ワークフローのテスト(dry-run)
-echo "digdag start ${PJ_NAME} ${PJ_NAME} --session now --endpoint ${DIGDAG_SERVER}"
-digdag start ${PJ_NAME} ${PJ_NAME} --session now --endpoint ${DIGDAG_SERVER}
+echo "digdag start ${PJ_NAME} ${PJ_NAME} --session now --endpoint ${DIGDAG_SERVER} ${PJ_OPTION}"
+digdag start ${PJ_NAME} ${PJ_NAME} --session now --endpoint ${DIGDAG_SERVER} ${PJ_OPTION}

@@ -90,10 +90,23 @@ digdag check /Users/kenichiro.saito/git/digdagProject/sample/sample.dig --projec
 プロジェクトの登録し、現在時刻(session now)で実行する。
 
 ```aidl
-./execute.sh {プロジェクトのパス} {server:ポート}
+./execute.sh {プロジェクトのパス} {server:ポート}　{オプション}
 
 例)
-./execute.sh /Users/kenichiro.saito/git/digdagProject/sample 10.201.161.10:65432
+./execute.sh /Users/kenichiro.saito/git/digdagProject/sample 10.201.161.10:65432 -p ex_bg_start_dt="2017/12/01 " -p ex_bg_end_dt="2017/12/02 " -p ex_pd_base_dt="2017/12/03 " 
+```
+
+### 注意事項
+
+Windowsユーザかつaliasでexecute.shを実行する場合、パラメータに下記の制限があります。
+
+https://paper.dropbox.com/doc/windowsdigdaggit-bash-T7ZptIGnq11Nj1xOYdEMy#:uid=175180747055376123881361&h2=%E5%AE%9F%E8%A1%8C%E6%99%82%E3%81%AE%E6%B3%A8%E6%84%8F%E4%BA%8B%E9%A0%85
+
+したがって下記のように、パラメータの最後にスペースを付けて実行してください。
+
+```aidl
+例）
+./execute.sh /Users/kenichiro.saito/git/digdagProject/sample 10.201.161.10:65432 -p ex_bg_start_dt="2017/12/01 " -p ex_bg_end_dt="2017/12/02 " -p ex_pd_base_dt="2017/12/03 " 
 ```
 
 ## 環境
