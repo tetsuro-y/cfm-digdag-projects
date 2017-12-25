@@ -99,11 +99,11 @@ KEY_PATH=/Users/kenichiro.saito/git/zozo-e62ae29b6c4f_cfm.json
 ```aidl
 mkdir -p out
 ./execute.sh {プロジェクトのパス} {server:ポート}　{オプション} > ./out/sample.sh
-./sample.sh
+./out/sample.sh
 
 例)
 ./execute.sh /Users/kenichiro.saito/git/digdagProject/sample 10.201.161.10:65432 -p ex_bg_start_dt=\"2017/12/01\" -p ex_bg_end_dt=\"2017/12/02\" -p ex_pd_base_dt=\"2017/12/03\" >./out/sample.sh
-./sample.sh 
+./out/sample.sh 
 ```
 
 出来上がった `sample.sh` は下記のようになります。
@@ -127,18 +127,18 @@ https://paper.dropbox.com/doc/windowsdigdaggit-bash-T7ZptIGnq11Nj1xOYdEMy#:uid=1
 
 ```aidl
 例）
-./execute.sh /Users/kenichiro.saito/git/digdagProject/sample 10.201.161.10:65432 -p ex_bg_start_dt=\"2017/12/01 \" -p ex_bg_end_dt=\"2017/12/02 \" -p ex_pd_base_dt=\"2017/12/03 \" >./out/sample.sh
-./sample.sh 
+./execute.sh /Users/kenichiro.saito/git/digdagProject/project/sample 10.201.161.10:65432 -p ex_bg_start_dt=\"2017/12/01 \" -p ex_bg_end_dt=\"2017/12/02 \" -p ex_pd_base_dt=\"2017/12/03 \" >./out/sample.sh
+./out/sample.sh 
 ```
 
 出来上がった `sample.sh` は下記のようになります。
 ```aidl
 #!/usr/bin/env bash
-digdag.bat push sample --project /c/Users/kenichiro.saito/Desktop/git/AutoDigdagProject/project/sample -r 2017-12-25T14:09:03+0900 --endpoint 10.201.161.10:65432
-cp ~/git/zozo-e62ae29b6c4f_cfm.json .
-digdag.bat secrets --project sample --set gcp.credential=@zozo-e62ae29b6c4f_cfm.json --endpoint 10.201.161.10:65432
-rm zozo-e62ae29b6c4f_cfm.json
-digdag.bat start sample sample --session now --endpoint 10.201.161.10:65432 -p ex_bg_start_dt="2017/12/01" -p ex_bg_end_dt="2017/12/02" -p ex_pd_base_dt="2017/12/03"
+digdag.bat push sample --project /c/Users/kenichiro.saito/Desktop/git/AutoDigdagProject/project/sample -r 2017-12-25T16:50:55+0900 --endpoint 10.201.161.10:65432
+cp /c/Users/kenichiro.saito/Desktop/git/zozo-70a08e5ccb2b_local.json .
+cmd.exe /c "digdag secrets --project sample --set \"gcp.credential=@zozo-70a08e5ccb2b_local.json\" --endpoint 10.201.161.10:65432"
+rm zozo-70a08e5ccb2b_local.json
+digdag.bat start sample sample --session now --endpoint 10.201.161.10:65432 -p ex_bg_start_dt="2017/12/01 " -p ex_bg_end_dt="2017/12/02 " -p ex_pd_base_dt="2017/12/03 "
 ```
 
 ## 環境
