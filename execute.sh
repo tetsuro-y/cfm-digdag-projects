@@ -11,12 +11,6 @@ case "$(uname -s)" in
     *)          machine="other"
 esac
 
-if [ "${machine}" = "cygwin"  ] || [ "${machine}" = "mingw"  ]; then
-    DIGDAG=digdag.bat
-else
-    DIGDAG=digdag
-fi
-
 echo "#!/usr/bin/env bash"
 
 # プロジェクトの登録
@@ -25,7 +19,13 @@ echo "${DIGDAG} push ${PJ_NAME} --project ${PJ_DIR} -r "$(date +%Y-%m-%dT%H:%M:%
 
 # bigqueryのアクセスキーを設定します
 echo "cp ~/git/zozo-e62ae29b6c4f_cfm.json ."
-echo "${DIGDAG} secrets --project ${PJ_NAME} --set gcp.credential=@zozo-e62ae29b6c4f_cfm.json --endpoint ${DIGDAG_SERVER}"
+
+if [ "${machine}" = "cygwin"  ] || [ "${machine}" = "mingw"  ]; then
+    echo "cmd.exe \c digdag secrets --project ${PJ_NAME} --set \"gcp.credential=@zozo-e62ae29b6c4f_cfm.json\" --endpoint ${DIGDAG_SERVER}"
+else
+    echo "${DIGDAG} secrets --project ${PJ_NAME} --set gcp.credential=@zozo-e62ae29b6c4f_cfm.json --endpoint ${DIGDAG_SERVER}"
+fi
+
 echo "rm zozo-e62ae29b6c4f_cfm.json"
 
 # ワークフローのテスト(dry-run)
