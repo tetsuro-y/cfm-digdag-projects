@@ -87,18 +87,33 @@ digdag check /Users/kenichiro.saito/git/digdagProject/sample/sample.dig --projec
 
 ### 実行
 
-プロジェクトの登録し、現在時刻(session now)で実行する。
+プロジェクトの登録し、現在時刻(session now)で実行する。 `execute.sh` シェルによって実行するシェルを作成します。
+`out` ディレクトリを作成した場合の実行方法は下記になります。※ BQ用の鍵は自分の鍵をセットするように変更してください。
 
 ```aidl
-./execute.sh {プロジェクトのパス} {server:ポート}　{オプション}
+mkdir -p out
+./execute.sh {プロジェクトのパス} {server:ポート}　{オプション} > ./out/sample.sh
+./sample.sh
 
 例)
-./execute.sh /Users/kenichiro.saito/git/digdagProject/sample 10.201.161.10:65432 -p ex_bg_start_dt="2017/12/01 " -p ex_bg_end_dt="2017/12/02 " -p ex_pd_base_dt="2017/12/03 " 
+./execute.sh /Users/kenichiro.saito/git/digdagProject/sample 10.201.161.10:65432 -p ex_bg_start_dt=\"2017/12/01\" -p ex_bg_end_dt=\"2017/12/02\" -p ex_pd_base_dt=\"2017/12/03\" >./out/sample.sh
+./sample.sh 
+```
+
+出来上がった `sample.sh` は下記のようになります。
+
+```aidl
+#!/usr/bin/env bash
+digdag push sample --project /Users/kenichiro.saito/git/digdagProject/project/sample -r 2017-12-25T14:21:00+0900 --endpoint 10.201.161.10:65432
+cp ~/git/zozo-e62ae29b6c4f_cfm.json .
+digdag secrets --project sample --set gcp.credential=@zozo-e62ae29b6c4f_cfm.json --endpoint 10.201.161.10:65432
+rm zozo-e62ae29b6c4f_cfm.json
+digdag start sample sample --session now --endpoint 10.201.161.10:65432 -p ex_bg_start_dt=2017/12/01 -p ex_bg_end_dt=2017/12/02 -p ex_pd_base_dt=2017/12/03
 ```
 
 ### 注意事項
 
-Windowsユーザかつaliasでexecute.shを実行する場合、パラメータに下記の制限があります。
+Windowsユーザは、下記の制限があります。
 
 https://paper.dropbox.com/doc/windowsdigdaggit-bash-T7ZptIGnq11Nj1xOYdEMy#:uid=175180747055376123881361&h2=%E5%AE%9F%E8%A1%8C%E6%99%82%E3%81%AE%E6%B3%A8%E6%84%8F%E4%BA%8B%E9%A0%85
 
@@ -106,7 +121,18 @@ https://paper.dropbox.com/doc/windowsdigdaggit-bash-T7ZptIGnq11Nj1xOYdEMy#:uid=1
 
 ```aidl
 例）
-./execute.sh /Users/kenichiro.saito/git/digdagProject/sample 10.201.161.10:65432 -p ex_bg_start_dt="2017/12/01 " -p ex_bg_end_dt="2017/12/02 " -p ex_pd_base_dt="2017/12/03 " 
+./execute.sh /Users/kenichiro.saito/git/digdagProject/sample 10.201.161.10:65432 -p ex_bg_start_dt=\"2017/12/01 \" -p ex_bg_end_dt=\"2017/12/02 \" -p ex_pd_base_dt=\"2017/12/03 \" >./out/sample.sh
+./sample.sh 
+```
+
+出来上がった `sample.sh` は下記のようになります。
+```aidl
+#!/usr/bin/env bash
+digdag.bat push sample --project /c/Users/kenichiro.saito/Desktop/git/AutoDigdagProject/project/sample -r 2017-12-25T14:09:03+0900 --endpoint 10.201.161.10:65432
+cp ~/git/zozo-e62ae29b6c4f_cfm.json .
+digdag.bat secrets --project sample --set gcp.credential=@zozo-e62ae29b6c4f_cfm.json --endpoint 10.201.161.10:65432
+rm zozo-e62ae29b6c4f_cfm.json
+digdag.bat start sample sample --session now --endpoint 10.201.161.10:65432 -p ex_bg_start_dt="2017/12/01" -p ex_bg_end_dt="2017/12/02" -p ex_pd_base_dt="2017/12/03"
 ```
 
 ## 環境
