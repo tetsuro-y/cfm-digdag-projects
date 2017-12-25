@@ -35,3 +35,7 @@ bin
 *.log
 *.swp
 *.bak
+
+# Project
+out
+env.sh

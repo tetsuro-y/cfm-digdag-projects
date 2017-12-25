@@ -1,0 +1,1 @@
+KEY_PATH=/Users/kenichiro.saito/git/zozo-e62ae29b6c4f_cfm.json
