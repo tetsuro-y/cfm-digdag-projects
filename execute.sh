@@ -20,7 +20,7 @@ fi
 echo "#!/usr/bin/env bash"
 
 # プロジェクトの登録
-echo "digdag push ${PJ_NAME} --project ${PJ_DIR} -r "$(date +%Y-%m-%dT%H:%M:%S%z)" --endpoint ${DIGDAG_SERVER}"
+echo "${DIGDAG} push ${PJ_NAME} --project ${PJ_DIR} -r "$(date +%Y-%m-%dT%H:%M:%S%z)" --endpoint ${DIGDAG_SERVER}"
 #${DIGDAG} push ${PJ_NAME} --project ${PJ_DIR} -r "$(date +%Y-%m-%dT%H:%M:%S%z)" --endpoint ${DIGDAG_SERVER} || exit 1
 
 # bigqueryのアクセスキーを設定します
@@ -29,5 +29,5 @@ echo "${DIGDAG} secrets --project ${PJ_NAME} --set gcp.credential=@zozo-e62ae29b
 echo "rm zozo-e62ae29b6c4f_cfm.json"
 
 # ワークフローのテスト(dry-run)
-echo "digdag start ${PJ_NAME} ${PJ_NAME} --session now --endpoint ${DIGDAG_SERVER} ${PJ_OPTION}"
+echo "${DIGDAG} start ${PJ_NAME} ${PJ_NAME} --session now --endpoint ${DIGDAG_SERVER} ${PJ_OPTION}"
 #${DIGDAG} start ${PJ_NAME} ${PJ_NAME} --session now --endpoint ${DIGDAG_SERVER} ${PJ_OPTION}
