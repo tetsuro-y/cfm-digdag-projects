@@ -87,8 +87,14 @@ digdag check /Users/kenichiro.saito/git/digdagProject/sample/sample.dig --projec
 
 ### 実行
 
+※ BQ用の鍵は自分の鍵をセットするように変更してください。鍵は、 `env.sh` にフルパスで指定してください。
+```aidl
+例)
+KEY_PATH=/Users/kenichiro.saito/git/zozo-e62ae29b6c4f_cfm.json
+```
+
 プロジェクトの登録し、現在時刻(session now)で実行する。 `execute.sh` シェルによって実行するシェルを作成します。
-`out` ディレクトリを作成した場合の実行方法は下記になります。※ BQ用の鍵は自分の鍵をセットするように変更してください。
+`out` ディレクトリを作成した場合の実行方法は下記になります。
 
 ```aidl
 mkdir -p out

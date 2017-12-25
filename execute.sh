@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+source $(cd $(dirname $0) && pwd)/env.sh
 source $(cd $(dirname $0) && pwd)/option_check.sh
 
 # SERVER SETTING
@@ -24,15 +25,16 @@ echo "${DIGDAG} push ${PJ_NAME} --project ${PJ_DIR} -r "$(date +%Y-%m-%dT%H:%M:%
 #${DIGDAG} push ${PJ_NAME} --project ${PJ_DIR} -r "$(date +%Y-%m-%dT%H:%M:%S%z)" --endpoint ${DIGDAG_SERVER} || exit 1
 
 # bigqueryのアクセスキーを設定します
-echo "cp ~/git/zozo-e62ae29b6c4f_cfm.json ."
+echo "cp ${KEY_PATH} ."
+filename=$(ls | grep -e zozo -e json | head -1)
 
 if [ "${machine}" = "cygwin"  ] || [ "${machine}" = "mingw"  ]; then
-    echo "cmd.exe /c \"digdag secrets --project ${PJ_NAME} --set \\\"gcp.credential=@zozo-e62ae29b6c4f_cfm.json\\\" --endpoint ${DIGDAG_SERVER}\""
+    echo "cmd.exe /c \"digdag secrets --project ${PJ_NAME} --set \\\"gcp.credential=@${filename}\\\" --endpoint ${DIGDAG_SERVER}\""
 else
-    echo "${DIGDAG} secrets --project ${PJ_NAME} --set gcp.credential=@zozo-e62ae29b6c4f_cfm.json --endpoint ${DIGDAG_SERVER}"
+    echo "${DIGDAG} secrets --project ${PJ_NAME} --set gcp.credential=@${filename} --endpoint ${DIGDAG_SERVER}"
 fi
 
-echo "rm zozo-e62ae29b6c4f_cfm.json"
+echo "rm ${filename}"
 
 # ワークフローのテスト(dry-run)
 echo "${DIGDAG} start ${PJ_NAME} ${PJ_NAME} --session now --endpoint ${DIGDAG_SERVER} ${PJ_OPTION}"
