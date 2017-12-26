@@ -1,7 +1,7 @@
 timezone: Asia/Tokyo
 
-#schedule:
-#  minutes_interval>: 5
+schedule:
+  minutes_interval>: 10
 
 _export:
   wf:
