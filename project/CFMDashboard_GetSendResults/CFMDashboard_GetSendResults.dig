@@ -61,6 +61,9 @@ _error:
       ga_end_date: "${ex_bg_end_dt ? ex_bg_end_dt : moment(session_date).subtract(1, 'days').format('YYYY-MM-DD')}"
       pd_base_date: "${ex_pd_base_dt ? ex_pd_base_dt : moment(session_date).format('YYYY/MM/DD') }"
 
+  +echo_params:
+    echo>: ga_start_date=${ga_start_date}, ga_end_date=${ga_end_date}, pd_base_date=${pd_base_date}
+
   +pre_delete_gcs_file:
     sh>: gsutil rm -rf ${bq.destination} || echo "no target file at the bucket"
 
