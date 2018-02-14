@@ -427,6 +427,8 @@ FROM (
             HVU_SENDDT >= '${pd_base_date}'::DATE + INTERVAL '-8DAYS'
             AND HVU_CHANNELID IN (1, 2)--メールおよびLINE
             AND HVU_CHANNEL_DETAILID = 4--パーソナライズ
+            AND HVU_OFFERID IS NOT NULL--OFFERIDが正しく取得できていないケースを除外する
+            AND HVU_VISITTIME >= HVU_SENDDT::TIMESTAMP--配信日以降の流入に絞る（配信日が流入日より後になっているような不正なレコードを除外する）
         GROUP BY
             VD_SENDDT
             ,VD_CAMPAIGNID
