@@ -22,6 +22,13 @@ _export:
     properties: /var/lib/digdag/puredata/dbconnection.properties
     file_path_0: queries/DWH/import
     file_path_1: queries/DWH/personalize
+    file_path_2: queries/DWH/mail_newarrival_town
+    file_path_3: queries/DWH/mail_newarrival_used
+    file_path_4: queries/DWH/mail_mass
+    file_path_5: queries/DWH/mail_transaction
+    file_path_6: queries/DWH/line_mass
+    file_path_7: queries/DWH/push
+    file_path_8: queries/DWH/sitenotice
 
   my_param:
     - DIGDAGSERVER_HOST
@@ -117,6 +124,27 @@ _error:
   +update_datamart:
     +load_sql_1:
       sh>: java -cp ${pure.jar} ${pure.class} ${pure.file_path_1} ${pure.properties}
+
+    +load_sql_2:
+      sh>: java -cp ${pure.jar} ${pure.class} ${pure.file_path_2} ${pure.properties}
+
+    +load_sql_3:
+      sh>: java -cp ${pure.jar} ${pure.class} ${pure.file_path_3} ${pure.properties}
+
+    +load_sql_4:
+      sh>: java -cp ${pure.jar} ${pure.class} ${pure.file_path_4} ${pure.properties}
+
+    +load_sql_5:
+      sh>: java -cp ${pure.jar} ${pure.class} ${pure.file_path_5} ${pure.properties}
+
+    +load_sql_6:
+      sh>: java -cp ${pure.jar} ${pure.class} ${pure.file_path_6} ${pure.properties}
+
+    +load_sql_7:
+      sh>: java -cp ${pure.jar} ${pure.class} ${pure.file_path_7} ${pure.properties}
+
+    +load_sql_8:
+      sh>: java -cp ${pure.jar} ${pure.class} ${pure.file_path_8} ${pure.properties}
 
   +teardown:
     echo>: finish ${moment(session_time).format('YYYY-MM-DD HH:mm:ss Z')}
