@@ -31,8 +31,8 @@ FROM (
         TPNPUSHAPPHISTORY
     INNER JOIN TPUSHNOTIFICATION ON PUSHNOTIFICATIONID = PNPUSHNOTIFICATIONID
     WHERE
-        CONTACTDT >= '${pd_base_date}'::TIMESTAMP + INTERVAL '-8DAYS'
-        AND CONTACTDT < '${pd_base_date}'::TIMESTAMP
+        CONTACTDT >= '${pd_base_date}'::DATE + INTERVAL '-8DAYS'
+        AND CONTACTDT < '${pd_base_date}'::DATE
         AND PUSHTYPEID = 1         /* PUSH */
         AND PUSHTYPECATEGORYID IN (1, 2, 3, 6)  /* パーソナライズ、新着おまとめ、新着リアルタイム、マス */
         AND MEMBERID IN (
@@ -66,8 +66,8 @@ LEFT JOIN (
         TPNPUSHAPPHISTORY
     INNER JOIN TPUSHNOTIFICATION ON PUSHNOTIFICATIONID = PNPUSHNOTIFICATIONID
     WHERE
-        CONTACTDT >= '${pd_base_date}'::TIMESTAMP + INTERVAL '-8DAYS'
-        AND CONTACTDT < '${pd_base_date}'::TIMESTAMP
+        CONTACTDT >= '${pd_base_date}'::DATE + INTERVAL '-8DAYS'
+        AND CONTACTDT < '${pd_base_date}'::DATE
         AND PUSHTYPEID = 1         /* PUSH */
         AND PUSHTYPECATEGORYID IN (1, 2, 3, 6)  /* 1:パーソナライズ、2:新着おまとめ、3:新着リアルタイム、6:マス */
         AND MEMBERID IS NULL
@@ -118,8 +118,8 @@ FROM (
     WHERE 
         HVU_CHANNELID = 3 /* PUSH */
         AND HVU_CHANNEL_DETAILID IN (1, 2, 4) /* 1:新着、2:マス、4:パーソナライズ */
-        AND HVU_SENDDT >= '${pd_base_date}'::TIMESTAMP + INTERVAL '-8DAYS'
-        AND HVU_SENDDT < '${pd_base_date}'::TIMESTAMP
+        AND HVU_SENDDT >= '${pd_base_date}'::DATE + INTERVAL '-8DAYS'
+        AND HVU_SENDDT < '${pd_base_date}'::DATE
     GROUP BY
         CC_CLICKDT
         ,CC_OSID
@@ -137,8 +137,8 @@ INNER JOIN (
     WHERE
         HVU_CHANNELID = 3 /* PUSH */
         AND HVU_CHANNEL_DETAILID IN (1, 2, 4) /* 1:新着、2:マス、4:パーソナライズ */
-        AND HVU_SENDDT >= '${pd_base_date}'::TIMESTAMP + INTERVAL '-8DAYS'
-        AND HVU_SENDDT < '${pd_base_date}'::TIMESTAMP
+        AND HVU_SENDDT >= '${pd_base_date}'::DATE + INTERVAL '-8DAYS'
+        AND HVU_SENDDT < '${pd_base_date}'::DATE
     GROUP BY
         CCN_SENDDT
         ,CCN_CHANNEL_DETAILID
@@ -346,8 +346,8 @@ FROM (
             TPNPUSHAPPHISTORY
         INNER JOIN TPUSHNOTIFICATION ON PUSHNOTIFICATIONID = PNPUSHNOTIFICATIONID
         WHERE
-            CONTACTDT >= '${pd_base_date}'::TIMESTAMP + INTERVAL '-8DAYS'
-            AND CONTACTDT < '${pd_base_date}'::TIMESTAMP
+            CONTACTDT >= '${pd_base_date}'::DATE + INTERVAL '-8DAYS'
+            AND CONTACTDT < '${pd_base_date}'::DATE
             AND PUSHTYPEID = 1         /* PUSH */
             AND PUSHTYPECATEGORYID IN (1, 2, 3, 6)  /* 1:パーソナライズ、2:新着おまとめ、3:新着リアルタイム、6:マス */
         GROUP BY
@@ -386,8 +386,8 @@ FROM (
         WHERE 
             HVU_CHANNELID = 3  /* PUSH */
             AND HVU_CHANNEL_DETAILID IN (1, 2, 4) /* 1:新着、2:マス、4:パーソナライズ */
-            AND HVU_SENDDT >= '${pd_base_date}'::TIMESTAMP + INTERVAL '-8DAYS'
-            AND HVU_SENDDT < '${pd_base_date}'::TIMESTAMP
+            AND HVU_SENDDT >= '${pd_base_date}'::DATE + INTERVAL '-8DAYS'
+            AND HVU_SENDDT < '${pd_base_date}'::DATE
         GROUP BY
             CG_CHANNEL_DETAILID
             ,CG_CAMPAIGNID
@@ -424,8 +424,8 @@ FROM TAT_DB_RESULT_HOURLY_SEND_TMP_GROUP
             TPNPUSHAPPHISTORY
         INNER JOIN TPUSHNOTIFICATION ON PUSHNOTIFICATIONID = PNPUSHNOTIFICATIONID
         WHERE
-            CONTACTDT >= '${pd_base_date}'::TIMESTAMP + INTERVAL '-8DAYS'
-            AND CONTACTDT < '${pd_base_date}'::TIMESTAMP
+            CONTACTDT >= '${pd_base_date}'::DATE + INTERVAL '-8DAYS'
+            AND CONTACTDT < '${pd_base_date}'::DATE
             AND PUSHTYPEID = 1         /* PUSH */
             AND PUSHTYPECATEGORYID IN (1, 2, 3, 6)  /* 1:パーソナライズ、2:新着おまとめ、3:新着リアルタイム、6:マス */
         GROUP BY 
@@ -472,8 +472,8 @@ FROM TAT_DB_RESULT_HOURLY_CLICK_TMP_GROUP
         WHERE 
             HVU_CHANNELID = 3  /* PUSH */
             AND HVU_CHANNEL_DETAILID IN (1, 2, 4) /* 1:新着、2:マス、4:パーソナライズ */
-            AND HVU_SENDDT >= '${pd_base_date}'::TIMESTAMP + INTERVAL '-8DAYS'
-            AND HVU_SENDDT < '${pd_base_date}'::TIMESTAMP
+            AND HVU_SENDDT >= '${pd_base_date}'::DATE + INTERVAL '-8DAYS'
+            AND HVU_SENDDT < '${pd_base_date}'::DATE
         GROUP BY
             HC_HOUR_CLICK
             ,HC_CHANNEL_DETAILID
