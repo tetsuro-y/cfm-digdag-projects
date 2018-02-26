@@ -14,20 +14,19 @@ INSERT INTO TAT_DB_TRANSACTION_TMP_MEMBER
 SELECT
     MMEMAILID AS TM_EMAILID
     ,CASE
-        WHEN RTrim(mmEmail) LIKE '%docomo.ne.jp'
-            OR RTrim(mmEmail) LIKE '%ezweb.ne.jp'
-            OR RTrim(mmEmail) LIKE '%softbank.ne.jp'
-            OR RTrim(mmEmail) LIKE '%vodafone.ne.jp'
-            OR RTrim(mmEmail) LIKE '%disney.ne.jp'
-            OR RTrim(mmEmail) LIKE '%willcom.com'
-            OR RTrim(mmEmail) LIKE '%pdx.ne.jp'
-            OR RTrim(mmEmail) LIKE '%wcm.ne.jp'
+        WHEN RTRIM(MMEMAIL) LIKE '%docomo.ne.jp'
+            OR RTRIM(MMEMAIL) LIKE '%ezweb.ne.jp'
+            OR RTRIM(MMEMAIL) LIKE '%softbank.ne.jp'
+            OR RTRIM(MMEMAIL) LIKE '%vodafone.ne.jp'
+            OR RTRIM(MMEMAIL) LIKE '%disney.ne.jp'
+            OR RTRIM(MMEMAIL) LIKE '%willcom.com'
+            OR RTRIM(MMEMAIL) LIKE '%pdx.ne.jp'
+            OR RTRIM(MMEMAIL) LIKE '%wcm.ne.jp'
             THEN 1 ELSE 0
      END AS TM_MOBILEFLAG
 FROM
     TMEMBEREMAIL MM
     LEFT JOIN TMEMBER ME ON MM.MMMEMBERID = ME.MEMEMBERID
-    LEFT JOIN TMEMBERB MB ON ME.MEMEMBERID = MB.MEBMEMBERID
 WHERE
     (ME.MEMALLID = 1 OR ME.MEMALLID IS NULL)
     AND MMMALLID = 1
@@ -50,7 +49,7 @@ SELECT
     ,VD_VISIT_TOTAL                                        AS RTR_CNT_CLICK_ALL
     ,NULL                                                 AS RTR_CNT_CLICK_PC
     ,NULL                                                 AS RTR_CNT_CLICK_MO
-    ,ROUND(100.0 *RTR_CNT_CLICK_ALL / RTR_CNT_OPEN_PC, 2)  AS RTR_RATE_CLICK_PER_OPEN_PC
+    ,NULL                                                 AS RTR_RATE_CLICK_PER_OPEN_PC
     ,NULL                                                 AS RTR_RATE_CLICK_PER_OPEN_MO
     ,VD_REVENUE_TOTAL                                      AS RTR_REVENUE_TOTAL_ALL
     ,NULL                                                 AS RTR_REVENUE_TOTAL_PC
@@ -58,27 +57,26 @@ SELECT
 FROM (
     SELECT
         TD_CAMPAIGNID AS DD_CAMPAIGNID
-        ,DATE_TRUNC('DAY', TD_SENDDT) AS DD_SENDDT
+        ,TD_SENDDT AS DD_SENDDT
         ,TD_CHANNELID AS DD_CHANNELID
         ,COUNT(CASE WHEN TD_MOBILEFLAG = 0 THEN NVL(TD_EMAILID, 0) ELSE NULL END) AS DD_CNT_SEND_PC
         ,COUNT(CASE WHEN TD_MOBILEFLAG = 1 THEN NVL(TD_EMAILID, 0) ELSE NULL END) AS DD_CNT_SEND_MO
         ,COUNT(CASE WHEN TD_OPENFLAG IS NOT NULL THEN NVL(TD_EMAILID, 0) ELSE NULL END) AS DD_CNT_OPEN_PC
     FROM (
         SELECT
-            TMDTRANSACTIONTYPE AS TD_CAMPAIGNID
+            CAST(TMDTRANSACTIONTYPE AS INTEGER) AS TD_CAMPAIGNID
             ,TMDMEMBERID AS TD_MEMBERID
             ,TMDEMAILID AS TD_EMAILID
             ,1 AS TD_CHANNELID
             ,TM_MOBILEFLAG AS TD_MOBILEFLAG
             ,TO_DATE(TMDCONTACTDT, 'YYYYMMDD') AS TD_SENDDT
             ,TMDOPENFLAG AS TD_OPENFLAG
-            ,TMDCLICKFLAG AS TD_CLICKFLAG
         FROM
             TTRNEMAILDELIVERY
             INNER JOIN TAT_DB_TRANSACTION_TMP_MEMBER /* PREFIX=TM */ ON TMDEMAILID = TM_EMAILID
         WHERE
-            TMDCONTACTDT >= '${pd_base_date}'::TIMESTAMP + INTERVAL '-8DAYS'
-            AND TMDCONTACTDT < '${pd_base_date}'::TIMESTAMP
+            TMDCONTACTDT::DATE >= '${pd_base_date}'::DATE + INTERVAL '-8DAYS'
+            AND TMDCONTACTDT::DATE < '${pd_base_date}'::DATE
             AND TMDMALLID = 1
             AND TMDCONTACTDT IS NOT NULL
     ) AS BASE
