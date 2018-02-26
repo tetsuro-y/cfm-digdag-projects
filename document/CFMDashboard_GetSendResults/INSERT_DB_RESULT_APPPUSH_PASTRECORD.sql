@@ -38,16 +38,15 @@ FROM (
     WHERE
         CONTACTDT >= (SELECT TT_STARTDT::DATE FROM TAT_DB_RESULT_PUSH_TMP_TERM)
         AND CONTACTDT < (SELECT TT_ENDDT::DATE FROM TAT_DB_RESULT_PUSH_TMP_TERM)
-        AND PUSHTYPEID = 1         /* PUSH */
         AND PUSHTYPECATEGORYID IN (1, 2, 3, 6)  /* パーソナライズ、新着おまとめ、新着リアルタイム、マス */
-        AND MEMBERID IN (
+        AND PUSHNOTIFICATIONID IN (
                 /* https://paper.dropbox.com/doc/SQL-0SOkloZHInKaefYHUPxal
                  アプリのインストール・アンインストールを繰り返す等した場合1ユーザに対して複数レコードが存在し、
                  結果配信数が実際よりも多く計上されてしまう例があるため下記条件を記載してユーザを一意にする */
-                SELECT MEMBERID
+                SELECT UQPUSHNOTIFICATIONID
                 FROM (
                         SELECT
-                            PNMEMBERID AS MEMBERID
+                            PNPUSHNOTIFICATIONID AS UQPUSHNOTIFICATIONID
                             ,ROW_NUMBER() OVER (PARTITION BY PNMEMBERID ORDER BY PNMODIFYDT DESC) AS ROWNUMBER /* 最新のMODIFYDTのレコードを正とするため */
                         FROM
                             TPUSHNOTIFICATION
@@ -73,7 +72,6 @@ LEFT JOIN (
     WHERE
         CONTACTDT >= (SELECT TT_STARTDT::DATE FROM TAT_DB_RESULT_PUSH_TMP_TERM)
         AND CONTACTDT < (SELECT TT_ENDDT::DATE FROM TAT_DB_RESULT_PUSH_TMP_TERM)
-        AND PUSHTYPEID = 1         /* PUSH */
         AND PUSHTYPECATEGORYID IN (1, 2, 3, 6)  /* 1:パーソナライズ、2:新着おまとめ、3:新着リアルタイム、6:マス */
         AND MEMBERID IS NULL
     GROUP BY 
@@ -122,7 +120,6 @@ FROM (
         TAT_DB_HISTORY_VISIT_USER
     WHERE 
         HVU_CHANNELID = 3 /* PUSH */
-        AND HVU_CHANNEL_DETAILID IN (1, 2, 4) /* 1:新着、2:マス、4:パーソナライズ */
         AND HVU_SENDDT >= (SELECT TT_STARTDT::DATE FROM TAT_DB_RESULT_PUSH_TMP_TERM)
         AND HVU_SENDDT < (SELECT TT_ENDDT::DATE FROM TAT_DB_RESULT_PUSH_TMP_TERM)
     GROUP BY
@@ -141,7 +138,6 @@ INNER JOIN (
         TAT_DB_HISTORY_VISIT_USER
     WHERE
         HVU_CHANNELID = 3 /* PUSH */
-        AND HVU_CHANNEL_DETAILID IN (1, 2, 4) /* 1:新着、2:マス、4:パーソナライズ */
         AND HVU_SENDDT >= (SELECT TT_STARTDT::DATE FROM TAT_DB_RESULT_PUSH_TMP_TERM)
         AND HVU_SENDDT < (SELECT TT_ENDDT::DATE FROM TAT_DB_RESULT_PUSH_TMP_TERM)
     GROUP BY

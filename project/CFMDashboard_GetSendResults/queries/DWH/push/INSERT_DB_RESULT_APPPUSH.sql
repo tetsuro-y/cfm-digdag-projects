@@ -32,16 +32,15 @@ FROM (
     WHERE
         CONTACTDT >= '${pd_base_date}'::DATE + INTERVAL '-8DAYS'
         AND CONTACTDT < '${pd_base_date}'::DATE
-        AND PUSHTYPEID = 1         /* PUSH */
         AND PUSHTYPECATEGORYID IN (1, 2, 3, 6)  /* パーソナライズ、新着おまとめ、新着リアルタイム、マス */
-        AND MEMBERID IN (
+        AND PUSHNOTIFICATIONID IN (
                 /* https://paper.dropbox.com/doc/SQL-0SOkloZHInKaefYHUPxal
                  アプリのインストール・アンインストールを繰り返す等した場合1ユーザに対して複数レコードが存在し、
                  結果配信数が実際よりも多く計上されてしまう例があるため下記条件を記載してユーザを一意にする */
-                SELECT MEMBERID
+                SELECT UQPUSHNOTIFICATIONID
                 FROM (
                         SELECT
-                            PNMEMBERID AS MEMBERID
+                            PNPUSHNOTIFICATIONID AS UQPUSHNOTIFICATIONID
                             ,ROW_NUMBER() OVER (PARTITION BY PNMEMBERID ORDER BY PNMODIFYDT DESC) AS ROWNUMBER /* 最新のMODIFYDTのレコードを正とするため */
                         FROM
                             TPUSHNOTIFICATION
@@ -67,7 +66,6 @@ LEFT JOIN (
     WHERE
         CONTACTDT >= '${pd_base_date}'::DATE + INTERVAL '-8DAYS'
         AND CONTACTDT < '${pd_base_date}'::DATE
-        AND PUSHTYPEID = 1         /* PUSH */
         AND PUSHTYPECATEGORYID IN (1, 2, 3, 6)  /* 1:パーソナライズ、2:新着おまとめ、3:新着リアルタイム、6:マス */
         AND MEMBERID IS NULL
     GROUP BY 
@@ -116,7 +114,6 @@ FROM (
         TAT_DB_HISTORY_VISIT_USER
     WHERE 
         HVU_CHANNELID = 3 /* PUSH */
-        AND HVU_CHANNEL_DETAILID IN (1, 2, 4) /* 1:新着、2:マス、4:パーソナライズ */
         AND HVU_SENDDT >= '${pd_base_date}'::DATE + INTERVAL '-8DAYS'
         AND HVU_SENDDT < '${pd_base_date}'::DATE
     GROUP BY
@@ -135,7 +132,6 @@ INNER JOIN (
         TAT_DB_HISTORY_VISIT_USER
     WHERE
         HVU_CHANNELID = 3 /* PUSH */
-        AND HVU_CHANNEL_DETAILID IN (1, 2, 4) /* 1:新着、2:マス、4:パーソナライズ */
         AND HVU_SENDDT >= '${pd_base_date}'::DATE + INTERVAL '-8DAYS'
         AND HVU_SENDDT < '${pd_base_date}'::DATE
     GROUP BY
@@ -347,7 +343,6 @@ FROM (
         WHERE
             CONTACTDT >= '${pd_base_date}'::DATE + INTERVAL '-8DAYS'
             AND CONTACTDT < '${pd_base_date}'::DATE
-            AND PUSHTYPEID = 1         /* PUSH */
             AND PUSHTYPECATEGORYID IN (1, 2, 3, 6)  /* 1:パーソナライズ、2:新着おまとめ、3:新着リアルタイム、6:マス */
         GROUP BY
             CG_PUSHTYPECATEGORYID
@@ -384,7 +379,6 @@ FROM (
             TAT_DB_HISTORY_VISIT_USER
         WHERE 
             HVU_CHANNELID = 3  /* PUSH */
-            AND HVU_CHANNEL_DETAILID IN (1, 2, 4) /* 1:新着、2:マス、4:パーソナライズ */
             AND HVU_SENDDT >= '${pd_base_date}'::DATE + INTERVAL '-8DAYS'
             AND HVU_SENDDT < '${pd_base_date}'::DATE
         GROUP BY
@@ -425,7 +419,6 @@ FROM TAT_DB_RESULT_HOURLY_SEND_TMP_GROUP
         WHERE
             CONTACTDT >= '${pd_base_date}'::DATE + INTERVAL '-8DAYS'
             AND CONTACTDT < '${pd_base_date}'::DATE
-            AND PUSHTYPEID = 1         /* PUSH */
             AND PUSHTYPECATEGORYID IN (1, 2, 3, 6)  /* 1:パーソナライズ、2:新着おまとめ、3:新着リアルタイム、6:マス */
         GROUP BY 
             HD_HOUR
@@ -470,7 +463,6 @@ FROM TAT_DB_RESULT_HOURLY_CLICK_TMP_GROUP
             TAT_DB_HISTORY_VISIT_USER
         WHERE 
             HVU_CHANNELID = 3  /* PUSH */
-            AND HVU_CHANNEL_DETAILID IN (1, 2, 4) /* 1:新着、2:マス、4:パーソナライズ */
             AND HVU_SENDDT >= '${pd_base_date}'::DATE + INTERVAL '-8DAYS'
             AND HVU_SENDDT < '${pd_base_date}'::DATE
         GROUP BY
