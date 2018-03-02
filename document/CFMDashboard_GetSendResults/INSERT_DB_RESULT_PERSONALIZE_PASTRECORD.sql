@@ -511,9 +511,11 @@ FROM (
             AND HVU_SENDDT < (SELECT TT_ENDDT::DATE FROM TAT_DB_RESULT_PERSONALIZE_TMP_TERM)
             AND HVU_CHANNELID IN (1, 2)--メールおよびLINE
             AND HVU_CHANNEL_DETAILID = 4--パーソナライズ
-            AND CASE
-                    WHEN TD_SYSTEMID  = 1 THEN HVU_OFFERID IS NOT NULL--3.0の場合はOFFERIDが正しく取得できていないケースを除外する
-                    WHEN TD_SYSTEMID  = 2 THEN NULL END--3.0以外はOFFERIDのデータがないので条件を指定しない
+            AND (
+                TD_SYSTEMID = 1 AND HVU_OFFERID IS NOT NULL
+                OR
+                TD_SYSTEMID = 2
+            )
             AND HVU_VISITTIME >= HVU_SENDDT::TIMESTAMP--配信日以降の流入に絞る（配信日が流入日より後になっているような不正なレコードを除外する）
             AND HVU_VISITTIME < HVU_SENDDT::DATE + INTERVAL '8DAYS'--配信から7日以内の流入に限定
         GROUP BY
