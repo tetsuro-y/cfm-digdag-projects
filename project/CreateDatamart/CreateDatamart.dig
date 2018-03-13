@@ -1,0 +1,84 @@
+timezone: Asia/Tokyo
+
+_export:
+  wf:
+    name: "日別データマート作成処理 (CreateDatamart) by DigDag"
+
+  git:
+    path: http://10.201.161.10:8084/git/CFM/sql-digdag.git
+    dirname: sql-digdag
+
+  bq:
+    dataset_name: temp
+    table_name: CreateDatamartTemp
+    destination: gs://stk-bigquery-export/CreateDatamartTemp_*
+#    query: sql-digdag/example/BQ
+    query: sql-digdag/sql/BQ
+
+  pure:
+    jar: /var/lib/digdag/puredata/nzExecuteSql-1.0.2.jar
+    class: jp.stk.cfm.ExecuteSqls
+    properties: /var/lib/digdag/puredata/dbconnection.properties
+#    query: sql-digdag/example/DWH
+    query: sql-digdag/sql/DWH
+    log_dir: /tmp/embulk/puredata/log/CreateDatamart
+
+  batch:
+    query: sql-digdag/sql/BATCH/1m1b
+    path: /tmp/CreateDatamart
+    mb_file: ${moment(session_time).format("YYYYMMDD")}-1m1b.tsv
+
+# 必要なSQLパラメータの設定
+#  MY_SQL_LIMIT: 1
+
+  my_param:
+    - DIGDAGSERVER_HOST
+    - DIGDAGSERVER_ENV
+
+  slack:
+    webhook: https://hooks.slack.com/services/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
+    channel: '#cfm_science_team'
+    username: digdag
+    icon_emoji: ghost
+    template_path: notification
+    good: good-template.yml
+    danger: danger-template.yml
+
+  plugin:
+    repositories:
+      - https://jitpack.io
+    dependencies:
+      - com.github.szyn:digdag-slack:0.1.2
+  # Set Reqired params
+  webhook_url: ${slack.webhook}
+  # Set Option params
+  workflow_name: ${wf.name}
+
++prepare_environments:
+  py>: tasks.PrepareEnviroments.set_parameters
+
+_error:
+  slack>: ${slack.template_path}/${slack.danger}
+
++prepare_environment:
+  sh>: mkdir -p ${pure.log_dir} && echo ${pure.log_dir}
+
++1m1b_insert:
+  +get_s3:
+    sh>: mkdir -p ${batch.path} && aws s3 cp --profile JP1_DIGDAG s3://st-work/1m1b/${batch.mb_file} ${batch.path}
+
+  +insert_puredata:
+    sh>: git clone ${git.path} && java -cp ${pure.jar} ${pure.class} ${batch.query} ${pure.properties} && rm -rf ${git.dirname}
+
+  +delete_file:
+    sh>: rm ${batch.path}/${batch.mb_file}
+
++sql_executor:
+  +pure_data:
+    +git_clone_select:
+      sh>: git clone ${git.path} && java -cp ${pure.jar} ${pure.class} ${pure.query} ${pure.properties} && rm -rf ${git.dirname}
+
+  +teardown:
+    echo>: finish ${moment(session_time).format('YYYY-MM-DD HH:mm:ss Z')}
+    _check:
+      slack>: ${slack.template_path}/${slack.good}
