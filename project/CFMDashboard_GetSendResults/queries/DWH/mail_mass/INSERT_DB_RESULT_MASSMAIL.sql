@@ -1,6 +1,6 @@
 --過去8日分のデータを削除(洗い替える)
 DELETE FROM TAT_DB_RESULT_MASSMAIL
-WHERE RMM_SENDDT >= '${pd_base_date}'::DATE + INTERVAL '-8DAYS' OR RMM_SENDDT < DATE_TRUNC('MONTH','${pd_base_date}'::DATE + INTERVAL '-25MONTHS');
+WHERE RMM_SENDDT >= '${pd_base_date}'::DATE + INTERVAL '-8DAYS' OR RMM_SENDDT < DATE_TRUNC('MONTH','${pd_base_date}'::DATE + INTERVAL '-25MONTHS')
 ;
 -------------------------------
 --マスメールの集計結果をINSERT
