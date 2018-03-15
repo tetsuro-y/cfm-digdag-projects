@@ -63,6 +63,9 @@ FROM (
                 ,COUNT(CASE WHEN MMD.MOBILEFLAG = 0 THEN OPENDT ELSE NULL END) AS CNT_OPEN
             FROM
                 (
+                    ---------------------------------------
+                    --※PARAMETER用カラムが追加され次第修正
+                    ---------------------------------------
                     SELECT
                         ARTICLEID
                         ,MAILMAGCAMPAIGNID
@@ -74,6 +77,7 @@ FROM (
                         TUCMAILMAGDELIVERY
                     WHERE
                         MAILMAGCAMPAIGNID = 1 --GC
+                        AND MAILMAGCAMPAIGNID NOT IN(9000, 9010)
                         AND DELIVERYDT >= CAST('${pd_base_date}' AS TIMESTAMP) + INTERVAL '-8DAYS'
                         AND DELIVERYDT < CAST('${pd_base_date}' AS TIMESTAMP)
                 ) AS MMD
