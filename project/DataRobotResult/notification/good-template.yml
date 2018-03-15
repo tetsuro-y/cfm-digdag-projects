@@ -1,0 +1,25 @@
+---
+username: ${slack.username}
+icon_emoji: ':blush:'
+channel: ${slack.channel}
+attachments:
+- fallback: '[SUCCESS] ${workflow_name} workflow'
+  color: "good"
+  text: '*[SUCCESS]* `${workflow_name}` Workflow'
+  mrkdwn_in:
+  - text
+  - pretext
+  - fields
+  fields:
+  - title: Session
+    value: http://${DIGDAGSERVER_HOST}/sessions/${session_id}
+    short: false
+  - title: Task Name
+    value: "${task_name}"
+    short: false
+  - title: Session Date
+    value: "${moment(session_time).utc().format('YYYY-MM-DD HH:mm:ss Z')}"
+    short: true
+  - title: Environment
+    value: ${DIGDAGSERVER_ENV}
+    short: true

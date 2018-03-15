@@ -1,0 +1,88 @@
+timezone: Asia/Tokyo
+
+#schedule:
+#  daily>: 09:30:00
+
+_export:
+  wf:
+    name: "2. DataRobot予測データ取得処理 (DataRobotPrepare) by DigDag"
+
+  git:
+    path: http://10.201.161.10:8084/git/CFM/sql-digdag.git
+    dirname: sql-digdag
+
+  # 予測に使用するデータは今現在までにある一番最新の情報を使用する
+  datarobot:
+    EXECUTE_TYPE: 'PREDICT'
+    EXECUTE_DATE: "${ex_execute_date ? ex_execute_date : moment(session_date).format('YYYYMMDD')}"
+    EXPORT_FILE_PATH: /tmp/puredata/upload/DataRobotPredict
+    EXPORT_PRED_FILE_PREFIX: DataRobotPredict
+    EXPORT_PRED_MEMBER_PREFIX: DataRobotPredictMember
+    S3_PREFIX: s3://st-work/datarobot/input
+
+  pure:
+    jar: /var/lib/digdag/puredata/nzExecuteSql-1.0.2.jar
+    class: jp.stk.cfm.ExecuteSqls
+    properties: /var/lib/digdag/puredata/dbconnection.properties
+    query: sql-digdag/sql/BATCH/DataRobot
+    log_dir: /tmp/puredata/log/DataRobotPrepare
+
+  my_param:
+    - DIGDAGSERVER_HOST
+    - DIGDAGSERVER_ENV
+
+  slack:
+    webhook: https://hooks.slack.com/services/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
+    channel: '#cfm_science_team'
+    username: digdag
+    icon_emoji: ghost
+    template_path: notification
+    good: good-template.yml
+    danger: danger-template.yml
+
+  plugin:
+    repositories:
+      - https://jitpack.io
+    dependencies:
+      - com.github.szyn:digdag-slack:0.1.2
+  # Set Reqired params
+  webhook_url: ${slack.webhook}
+  # Set Option params
+  workflow_name: ${wf.name}
+
++prepare_environments:
+  py>: tasks.PrepareEnviroments.set_parameters
+
+_error:
+  slack>: ${slack.template_path}/${slack.danger}
+
++prepare_environment:
+  +prep_pure:
+    sh>: mkdir -p ${pure.log_dir} && echo ${pure.log_dir}
+
+  +prep_datarobot:
+    sh>: mkdir -p ${datarobot.EXPORT_FILE_PATH}
+
++predict_get_data:
+  +from_pure:
+    sh>: git clone ${git.path} && cd ${git.dirname} && git checkout -b SAITO_DATAROBOT_AUTOMATION origin/SAITO_DATAROBOT_AUTOMATION && cd .. && java -cp ${pure.jar} ${pure.class} ${pure.query}/0_CREATE_BASE_TABLE ${pure.properties}  && java -cp ${pure.jar} ${pure.class} ${pure.query}/2_GET_PREDICTION ${pure.properties} && rm -rf ${git.dirname}
+
+  +prd_a_upload_s3:
+    sh>: aws s3 cp --profile JP1_DIGDAG ${datarobot.EXPORT_FILE_PATH}/${datarobot.EXPORT_PRED_FILE_PREFIX}_${datarobot.EXECUTE_DATE}_A.csv ${datarobot.S3_PREFIX}/${datarobot.EXECUTE_DATE}/${datarobot.EXPORT_PRED_FILE_PREFIX}_${datarobot.EXECUTE_DATE}_A.csv
+
+  +prd_b_upload_s3:
+    sh>: aws s3 cp --profile JP1_DIGDAG ${datarobot.EXPORT_FILE_PATH}/${datarobot.EXPORT_PRED_FILE_PREFIX}_${datarobot.EXECUTE_DATE}_B.csv ${datarobot.S3_PREFIX}/${datarobot.EXECUTE_DATE}/${datarobot.EXPORT_PRED_FILE_PREFIX}_${datarobot.EXECUTE_DATE}_B.csv
+
+  +prd_a_member_upload_s3:
+    sh>: aws s3 cp --profile JP1_DIGDAG ${datarobot.EXPORT_FILE_PATH}/${datarobot.EXPORT_PRED_MEMBER_PREFIX}_${datarobot.EXECUTE_DATE}_A.csv ${datarobot.S3_PREFIX}/${datarobot.EXECUTE_DATE}/${datarobot.EXPORT_PRED_MEMBER_PREFIX}_${datarobot.EXECUTE_DATE}_A.csv
+
+  +prd_b_member_upload_s3:
+    sh>: aws s3 cp --profile JP1_DIGDAG ${datarobot.EXPORT_FILE_PATH}/${datarobot.EXPORT_PRED_MEMBER_PREFIX}_${datarobot.EXECUTE_DATE}_B.csv ${datarobot.S3_PREFIX}/${datarobot.EXECUTE_DATE}/${datarobot.EXPORT_PRED_MEMBER_PREFIX}_${datarobot.EXECUTE_DATE}_B.csv
+
+  +delete_file:
+    sh>: rm ${datarobot.EXPORT_FILE_PATH}/${datarobot.EXPORT_PRED_FILE_PREFIX}_${datarobot.EXECUTE_DATE}_A.csv ${datarobot.EXPORT_FILE_PATH}/${datarobot.EXPORT_PRED_FILE_PREFIX}_${datarobot.EXECUTE_DATE}_B.csv ${datarobot.EXPORT_FILE_PATH}/${datarobot.EXPORT_PRED_MEMBER_PREFIX}_${datarobot.EXECUTE_DATE}_A.csv ${datarobot.EXPORT_FILE_PATH}/${datarobot.EXPORT_PRED_MEMBER_PREFIX}_${datarobot.EXECUTE_DATE}_B.csv
+
+  +teardown:
+    echo>: finish ${moment(session_time).format('YYYY-MM-DD HH:mm:ss Z')}
+    _check:
+      slack>: ${slack.template_path}/${slack.good}
