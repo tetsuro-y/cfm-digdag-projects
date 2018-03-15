@@ -8,7 +8,6 @@ WHERE RMM_SENDDT >= '${pd_base_date}'::DATE + INTERVAL '-8DAYS' OR RMM_SENDDT < 
 -------------------------------
 --マスメールの集計結果をINSERT
 -------------------------------
---※配信数・開封数はTUCEMAILDELIVERYとCAMPAIGNIDとJOINできないため仮の値
 INSERT INTO TAT_DB_RESULT_MASSMAIL
 SELECT
     CAMPAIGN_SEND
@@ -83,15 +82,15 @@ FROM (
                 ) AS MMD
                 INNER JOIN TUCMAILMAGDELIVERYDETAIL AS MMDD ON MMD.ARTICLEID = MMDD.ARTICLEID
                 INNER JOIN (
-                    SELECT 
+                    SELECT
                         MPM_CHANNELID
-                        , MPM_CHANNEL_DETAILID
-                        , MPM_PARAMETER
-                        , MPM_MAPPINGID 
-                    FROM 
-                        TAT_DB_MASTER_PARAMETER_MAPPING 
-                    WHERE 
-                        MPM_CHANNELID = 1 
+                        ,MPM_CHANNEL_DETAILID
+                        ,MPM_PARAMETER
+                        ,MPM_MAPPINGID
+                    FROM
+                        TAT_DB_MASTER_PARAMETER_MAPPING
+                    WHERE
+                        MPM_CHANNELID = 1
                         AND MPM_CHANNEL_DETAILID = 2
                 ) AS MPM ON PARAMETER = MPM_PARAMETER
             WHERE
