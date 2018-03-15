@@ -76,10 +76,10 @@ FROM (
                     FROM
                         TUCMAILMAGDELIVERY
                     WHERE
-                        MAILMAGCAMPAIGNID = 1 --GC
-                        AND MAILMAGCAMPAIGNID NOT IN(9000, 9010)
-                        AND DELIVERYDT >= CAST('${pd_base_date}' AS TIMESTAMP) + INTERVAL '-8DAYS'
+                        DELIVERYDT >= CAST('${pd_base_date}' AS TIMESTAMP) + INTERVAL '-8DAYS'
                         AND DELIVERYDT < CAST('${pd_base_date}' AS TIMESTAMP)
+                        AND MAILMAGCAMPAIGNID = 1 --GC
+                        AND MAILMAGCAMPAIGNID NOT IN(9000, 9010)
                 ) AS MMD
                 INNER JOIN TUCMAILMAGDELIVERYDETAIL AS MMDD ON MMD.ARTICLEID = MMDD.ARTICLEID
                 INNER JOIN (
@@ -95,9 +95,10 @@ FROM (
                         AND MPM_CHANNEL_DETAILID = 2
                 ) AS MPM ON PARAMETER = MPM_PARAMETER
             WHERE
-                MAILMAGCAMPAIGNID = 1 --GC
-                AND DELIVERYDT >= CAST('${pd_base_date}' AS TIMESTAMP) + INTERVAL '-8DAYS'
+                DELIVERYDT >= CAST('${pd_base_date}' AS TIMESTAMP) + INTERVAL '-8DAYS'
                 AND DELIVERYDT < CAST('${pd_base_date}' AS TIMESTAMP)
+                AND MAILMAGCAMPAIGNID = 1 --GC
+                AND MAILMAGCAMPAIGNID NOT IN(9000, 9010)
             GROUP BY
                 SENDDT_SEND
                 ,CAMPAIGN_SEND
@@ -118,10 +119,10 @@ FROM (
             FROM
                 TAT_DB_HISTORY_VISIT_USER
             WHERE
-                HVU_CHANNELID = 1
-                AND HVU_CHANNEL_DETAILID = 2
-                AND HVU_SENDDT >= CAST('${pd_base_date}' AS TIMESTAMP) + INTERVAL '-8DAYS'
+                HVU_SENDDT >= CAST('${pd_base_date}' AS TIMESTAMP) + INTERVAL '-8DAYS'
                 AND HVU_SENDDT < CAST('${pd_base_date}' AS TIMESTAMP)
+                AND HVU_CHANNELID = 1
+                AND HVU_CHANNEL_DETAILID = 2
             GROUP BY
                 HVU_SENDDT
                 ,HVU_CAMPAIGNID
