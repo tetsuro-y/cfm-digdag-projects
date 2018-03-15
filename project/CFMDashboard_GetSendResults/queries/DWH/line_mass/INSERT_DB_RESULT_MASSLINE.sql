@@ -5,13 +5,25 @@ BEGIN
 DELETE FROM TAT_DB_RESULT_MASSLINE
 WHERE
     (
-        RML_SENDDT >= '${pd_base_date}'::DATE + INTERVAL '-8DAYS' OR RML_SENDDT < DATE_TRUNC('MONTH','${pd_base_date}'::DATE + INTERVAL '-25MONTHS')
-        AND RML_SENDDT IS NOT NULL
+        (
+            RML_SENDDT >= '${pd_base_date}'::DATE + INTERVAL '-8DAYS'
+        )
+        OR
+        (
+            RML_SENDDT < DATE_TRUNC('MONTH','${pd_base_date}'::DATE + INTERVAL '-25MONTHS')
+            AND RML_SENDDT IS NOT NULL
+        )
     )
     OR
     (
-        RML_VISITDT >= '${pd_base_date}'::DATE + INTERVAL '-8DAYS' OR RML_VISITDT < DATE_TRUNC('MONTH','${pd_base_date}'::DATE + INTERVAL '-25MONTHS')
-        AND RML_VISITDT IS NOT NULL
+        (
+            RML_VISITDT >= '${pd_base_date}'::DATE + INTERVAL '-8DAYS'
+        )
+        OR
+        (
+            RML_VISITDT < DATE_TRUNC('MONTH','${pd_base_date}'::DATE + INTERVAL '-25MONTHS')
+            AND RML_VISITDT IS NOT NULL
+        )
     )
 ;
 
@@ -28,8 +40,10 @@ FROM
     TAT_DB_HISTORY_VISIT_USER
 WHERE
     HVU_SENDDT >= '${pd_base_date}'::DATE + INTERVAL '-8DAYS'
+    AND HVU_SENDDT < '${pd_base_date}'::DATE
     AND HVU_CHANNELID = 2--LINE
     AND HVU_CHANNEL_DETAILID IN (2,5)--マス,タイムライン
+    -- AND HVU_VISITTIME >= HVU_SENDDT::TIMESTAMP
 GROUP BY
     RML_CHANNEL_DETAILID
     ,RML_CAMPAIGNID
@@ -49,6 +63,7 @@ FROM
     TAT_DB_HISTORY_VISIT_USER
 WHERE
     HVU_VISITTIME >= '${pd_base_date}'::DATE + INTERVAL '-8DAYS'
+    AND HVU_VISITTIME < '${pd_base_date}'::DATE
     AND HVU_CHANNELID = 2--LINE
     AND HVU_CHANNEL_DETAILID = 6--リッチメニュー
 GROUP BY
