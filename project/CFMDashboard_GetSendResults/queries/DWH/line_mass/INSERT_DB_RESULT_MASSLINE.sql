@@ -7,23 +7,19 @@ WHERE
     (
         (
             RML_SENDDT >= '${pd_base_date}'::DATE + INTERVAL '-8DAYS'
-        )
-        OR
-        (
+            OR
             RML_SENDDT < DATE_TRUNC('MONTH','${pd_base_date}'::DATE + INTERVAL '-25MONTHS')
-            AND RML_SENDDT IS NOT NULL
         )
+        AND RML_SENDDT IS NOT NULL
     )
     OR
     (
         (
             RML_VISITDT >= '${pd_base_date}'::DATE + INTERVAL '-8DAYS'
-        )
-        OR
-        (
+            OR
             RML_VISITDT < DATE_TRUNC('MONTH','${pd_base_date}'::DATE + INTERVAL '-25MONTHS')
-            AND RML_VISITDT IS NOT NULL
         )
+        AND RML_VISITDT IS NOT NULL
     )
 ;
 
