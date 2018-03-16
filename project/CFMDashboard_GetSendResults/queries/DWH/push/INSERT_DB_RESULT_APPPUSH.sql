@@ -11,10 +11,80 @@ CREATE TEMP TABLE TAT_DB_RESULT_TMP_PUSH_SEND_PUSHTYPE
     ,TPSP_ITEMID INTEGER
     ,TPSP_CNT_SEND INTEGER
 )
-DISTRIBUTE ON (TPSP_SENDDT, TPSP_OSID, TPSP_PUSHTYPECATEGORYID, TPSP_ITEMID)
+DISTRIBUTE ON (TPSP_SENDDT, TPSP_OSID, TPSP_PUSHTYPECATEGORYID)
 ;
 
 INSERT INTO TAT_DB_RESULT_TMP_PUSH_SEND_PUSHTYPE
+/* パーソナライズ以外を集計 */
+SELECT
+    MS_SENDDT
+    ,MS_DEVICETYPEID
+    ,MS_PUSHTYPECATEGORYID
+    ,null AS MS_ITEMID
+    ,SUM(MS_CNT_SEND) /* MEMBERIDが存在しないデータ・存在するデータの合算 */
+FROM (
+         /* MEMBERIDが存在する配信データ */
+         SELECT
+              DATE_TRUNC('DAY', CONTACTDT) AS MS_SENDDT
+             ,PNDEVICETYPEID AS MS_DEVICETYPEID
+             ,PUSHTYPECATEGORYID AS MS_PUSHTYPECATEGORYID
+             ,NVL(COUNT(PNDEVICETYPEID), 0) AS MS_CNT_SEND
+         FROM
+             TPNPUSHAPPHISTORY
+             INNER JOIN TPUSHNOTIFICATION ON PUSHNOTIFICATIONID = PNPUSHNOTIFICATIONID
+         WHERE
+             CONTACTDT >= '${pd_base_date}'::DATE + INTERVAL '-8DAYS'
+             AND CONTACTDT < '${pd_base_date}'::DATE
+             AND PUSHTYPECATEGORYID IN (2, 3, 6)  /* 新着おまとめ、新着リアルタイム、マス */
+             AND PUSHNOTIFICATIONID IN (
+                 /* https://paper.dropbox.com/doc/SQL-0SOkloZHInKaefYHUPxal
+                  アプリのインストール・アンインストールを繰り返す等した場合1ユーザに対して複数レコードが存在し、
+                  結果配信数が実際よりも多く計上されてしまう例があるため下記条件を記載してユーザを一意にする */
+                 SELECT UQPUSHNOTIFICATIONID
+                 FROM (
+                          SELECT
+                               PNPUSHNOTIFICATIONID AS UQPUSHNOTIFICATIONID
+                              ,ROW_NUMBER() OVER (PARTITION BY PNMEMBERID ORDER BY PNMODIFYDT DESC) AS ROWNUMBER /* 最新のMODIFYDTのレコードを正とするため */
+                          FROM
+                              TPUSHNOTIFICATION
+                      ) AS GETROWNUM
+                 WHERE
+                     ROWNUMBER = 1
+             )
+         GROUP BY
+             MS_SENDDT
+             ,MS_PUSHTYPECATEGORYID
+             ,MS_DEVICETYPEID
+
+         UNION ALL
+
+         /* MEMBERIDが存在しない配信データ */
+         SELECT
+              DATE_TRUNC('DAY', CONTACTDT) AS MS_SENDDT
+             ,PNDEVICETYPEID AS MS_DEVICETYPEID
+             ,PUSHTYPECATEGORYID AS MS_PUSHTYPECATEGORYID
+             ,NVL(COUNT(PNDEVICETYPEID), 0) AS MS_CNT_SEND
+         FROM
+             TPNPUSHAPPHISTORY
+             INNER JOIN TPUSHNOTIFICATION ON PUSHNOTIFICATIONID = PNPUSHNOTIFICATIONID
+         WHERE
+             CONTACTDT >= '${pd_base_date}'::DATE + INTERVAL '-8DAYS'
+             AND CONTACTDT < '${pd_base_date}'::DATE
+             AND PUSHTYPECATEGORYID IN (2, 3, 6)  /* 2:新着おまとめ、3:新着リアルタイム、6:マス */
+             AND MEMBERID IS NULL
+         GROUP BY
+             MS_SENDDT
+             ,MS_PUSHTYPECATEGORYID
+             ,MS_DEVICETYPEID
+     ) AS MEMBER_SEND /*PREFIX = MS */
+GROUP BY
+    MS_SENDDT
+    ,MS_DEVICETYPEID
+    ,MS_PUSHTYPECATEGORYID
+
+UNION ALL 
+
+/* パーソナライズの集計 */
 SELECT
     MS_SENDDT
     ,MS_DEVICETYPEID
@@ -35,7 +105,7 @@ FROM (
          WHERE
              CONTACTDT >= '${pd_base_date}'::DATE + INTERVAL '-8DAYS'
              AND CONTACTDT < '${pd_base_date}'::DATE
-             AND PUSHTYPECATEGORYID IN (1, 2, 3, 6)  /* パーソナライズ、新着おまとめ、新着リアルタイム、マス */
+             AND PUSHTYPECATEGORYID = 1 /* パーソナライズ */
              AND PUSHNOTIFICATIONID IN (
                  /* https://paper.dropbox.com/doc/SQL-0SOkloZHInKaefYHUPxal
                   アプリのインストール・アンインストールを繰り返す等した場合1ユーザに対して複数レコードが存在し、
@@ -72,7 +142,7 @@ FROM (
          WHERE
              CONTACTDT >= '${pd_base_date}'::DATE + INTERVAL '-8DAYS'
              AND CONTACTDT < '${pd_base_date}'::DATE
-             AND PUSHTYPECATEGORYID IN (1, 2, 3, 6)  /* 1:パーソナライズ、2:新着おまとめ、3:新着リアルタイム、6:マス */
+             AND PUSHTYPECATEGORYID = 1 /* パーソナライズ */
              AND MEMBERID IS NULL
          GROUP BY
              MS_SENDDT
@@ -84,7 +154,7 @@ GROUP BY
     MS_SENDDT
     ,MS_DEVICETYPEID
     ,MS_PUSHTYPECATEGORYID
-    ,MS_ITEMID		
+    ,MS_ITEMID      
 ;
 
 /* 流入数の集計 */
@@ -365,10 +435,36 @@ CREATE TEMP TABLE TAT_DB_RESULT_HOURLY_SEND_TMP_GROUP
     ,HSTG_DEVICETYPEID BYTEINT
     ,HSTG_ITEMID INTEGER
 )
-DISTRIBUTE ON (HSTG_HOUR, HSTG_PUSHTYPECATEGORYID, HSTG_DEVICETYPEID, HSTG_ITEMID)
+DISTRIBUTE ON (HSTG_HOUR, HSTG_PUSHTYPECATEGORYID, HSTG_DEVICETYPEID)
 ;
 
 INSERT INTO TAT_DB_RESULT_HOURLY_SEND_TMP_GROUP
+/* パーソナライズ以外を集計 */
+SELECT
+    MDH_HOUR AS HSTG_HOUR
+    ,CG_PUSHTYPECATEGORYID AS CG_PUSHTYPECATEGORYID
+    ,CG_DEVICETYPEID AS HSTG_DEVICETYPEID
+    ,null AS HSTG_ITEMID
+FROM (
+        SELECT
+            PUSHTYPECATEGORYID AS CG_PUSHTYPECATEGORYID
+            ,PNDEVICETYPEID AS CG_DEVICETYPEID
+        FROM 
+            TPNPUSHAPPHISTORY
+        INNER JOIN TPUSHNOTIFICATION ON PUSHNOTIFICATIONID = PNPUSHNOTIFICATIONID
+        WHERE
+            CONTACTDT >= '${pd_base_date}'::DATE + INTERVAL '-8DAYS'
+            AND CONTACTDT < '${pd_base_date}'::DATE
+            AND PUSHTYPECATEGORYID IN (2, 3, 6)  /* 2:新着おまとめ、3:新着リアルタイム、6:マス */
+        GROUP BY
+            CG_PUSHTYPECATEGORYID
+            ,CG_DEVICETYPEID
+    ) AS CHANNEL_GROUP /*PREFIX = CG */
+    CROSS JOIN TAT_DB_MASTER_DELIVERY_HOUR
+
+UNION ALL
+
+/* パーソナライズを集計 */
 SELECT
     MDH_HOUR AS HSTG_HOUR
     ,CG_PUSHTYPECATEGORYID AS CG_PUSHTYPECATEGORYID
@@ -385,7 +481,7 @@ FROM (
         WHERE
             CONTACTDT >= '${pd_base_date}'::DATE + INTERVAL '-8DAYS'
             AND CONTACTDT < '${pd_base_date}'::DATE
-            AND PUSHTYPECATEGORYID IN (1, 2, 3, 6)  /* 1:パーソナライズ、2:新着おまとめ、3:新着リアルタイム、6:マス */
+            AND PUSHTYPECATEGORYID = 1  /* 1:パーソナライズ */
         GROUP BY
             CG_PUSHTYPECATEGORYID
             ,CG_DEVICETYPEID
@@ -441,10 +537,43 @@ CREATE TEMP TABLE TAT_DB_RESULT_HOURLY_SEND_TMP
     ,HST_ITEMID INTEGER    
     ,HST_CNT_SEND INTEGER
 )
-DISTRIBUTE ON (HST_HOUR, HST_PUSHTYPECATEGORYID, HST_DEVICETYPEID, HST_ITEMID)
+DISTRIBUTE ON (HST_HOUR, HST_PUSHTYPECATEGORYID, HST_DEVICETYPEID)
 ;
 
+/* パーソナライズ以外を集計 */
 INSERT INTO TAT_DB_RESULT_HOURLY_SEND_TMP
+SELECT
+    HSTG_HOUR AS HST_HOUR
+    ,HSTG_PUSHTYPECATEGORYID AS HST_PUSHTYPECATEGORYID
+    ,HSTG_DEVICETYPEID AS HST_DEVICETYPEID
+    ,null AS HST_ITEMID
+    ,NVL(HD_CNT_SEND, 0) AS HST_CNT_SEND
+FROM TAT_DB_RESULT_HOURLY_SEND_TMP_GROUP
+    LEFT JOIN (
+        SELECT
+            DATE_PART('HOUR', CONTACTDT) AS HD_HOUR
+            ,PUSHTYPECATEGORYID AS HD_PUSHTYPECATEGORYID
+            ,PNDEVICETYPEID AS HD_DEVICETYPEID
+            ,COUNT(HD_HOUR) AS HD_CNT_SEND
+        FROM 
+            TPNPUSHAPPHISTORY
+        INNER JOIN TPUSHNOTIFICATION ON PUSHNOTIFICATIONID = PNPUSHNOTIFICATIONID
+        WHERE
+            CONTACTDT >= '${pd_base_date}'::DATE + INTERVAL '-8DAYS'
+            AND CONTACTDT < '${pd_base_date}'::DATE
+            AND PUSHTYPECATEGORYID IN (2, 3, 6)  /* 2:新着おまとめ、3:新着リアルタイム、6:マス */
+        GROUP BY 
+            HD_HOUR
+            ,HD_PUSHTYPECATEGORYID
+            ,HD_DEVICETYPEID
+    ) AS HOUR_SEND /*PREFIX = HD */ 
+    ON HSTG_PUSHTYPECATEGORYID = HD_PUSHTYPECATEGORYID
+    AND HSTG_DEVICETYPEID = HD_DEVICETYPEID
+    AND HSTG_HOUR = HD_HOUR
+
+UNION ALL
+
+/* パーソナライズ集計 */
 SELECT
     HSTG_HOUR AS HST_HOUR
     ,HSTG_PUSHTYPECATEGORYID AS HST_PUSHTYPECATEGORYID
@@ -465,7 +594,7 @@ FROM TAT_DB_RESULT_HOURLY_SEND_TMP_GROUP
         WHERE
             CONTACTDT >= '${pd_base_date}'::DATE + INTERVAL '-8DAYS'
             AND CONTACTDT < '${pd_base_date}'::DATE
-            AND PUSHTYPECATEGORYID IN (1, 2, 3, 6)  /* 1:パーソナライズ、2:新着おまとめ、3:新着リアルタイム、6:マス */
+            AND PUSHTYPECATEGORYID  = 1 /* 1:パーソナライズ */
         GROUP BY 
             HD_HOUR
             ,HD_PUSHTYPECATEGORYID
