@@ -62,14 +62,14 @@ _error:
     sh>: mkdir -p ${datarobot.EXPORT_FILE_PATH}
 
   +echo_param:
-    sh>: echo EXECUTE_DATE=${datarobot.EXECUTE_DATE} MODEL_NAME=${datarobot.MODEL_NAME} THRESHOLD=${datarobot.THRESHOLD}
+    sh>: echo "EXECUTE_DATE=${datarobot.EXECUTE_DATE} MODEL_NAME=${datarobot.MODEL_NAME} THRESHOLD=${datarobot.THRESHOLD} TABLE_NAME=${DIGDAGSERVER_ENV}_${session_id}"
 
 +result_get_data:
   +get_pred_a_score_s3:
-    sh>: aws s3 cp --profile JP1_DIGDAG ${datarobot.S3_PREFIX}/output/${datarobot.EXECUTE_DATE}/${datarobot.MODEL_NAME}_${datarobot.EXECUTE_DATE}_A.csv ${datarobot.EXPORT_FILE_PATH}/${datarobot.MODEL_NAME}_${datarobot.EXECUTE_DATE}_A.csv
+    sh>: aws s3 cp --profile JP1_DIGDAG "${datarobot.S3_PREFIX}/output/${datarobot.EXECUTE_DATE}/${datarobot.MODEL_NAME}_${datarobot.EXECUTE_DATE}_A.csv" "${datarobot.EXPORT_FILE_PATH}/${datarobot.MODEL_NAME}_${datarobot.EXECUTE_DATE}_A.csv"
 
   +get_pred_b_score_s3:
-    sh>: aws s3 cp --profile JP1_DIGDAG ${datarobot.S3_PREFIX}/output/${datarobot.EXECUTE_DATE}/${datarobot.MODEL_NAME}_${datarobot.EXECUTE_DATE}_B.csv ${datarobot.EXPORT_FILE_PATH}/${datarobot.MODEL_NAME}_${datarobot.EXECUTE_DATE}_B.csv
+    sh>: aws s3 cp --profile JP1_DIGDAG "${datarobot.S3_PREFIX}/output/${datarobot.EXECUTE_DATE}/${datarobot.MODEL_NAME}_${datarobot.EXECUTE_DATE}_B.csv" "${datarobot.EXPORT_FILE_PATH}/${datarobot.MODEL_NAME}_${datarobot.EXECUTE_DATE}_B.csv"
 
   +get_pred_a_member_s3:
     sh>: aws s3 cp --profile JP1_DIGDAG ${datarobot.S3_PREFIX}/input/${datarobot.EXECUTE_DATE}/${datarobot.EXPORT_PRED_MEMBER_PREFIX}_${datarobot.EXECUTE_DATE}_A.csv ${datarobot.EXPORT_FILE_PATH}/${datarobot.EXPORT_PRED_MEMBER_PREFIX}_${datarobot.EXECUTE_DATE}_A.csv
@@ -79,16 +79,16 @@ _error:
 
   # EXPONENTIAL表記を数字表記に変換する
   +convert_score_a:
-    sh>: cat ${datarobot.EXPORT_FILE_PATH}/${datarobot.MODEL_NAME}_${datarobot.EXECUTE_DATE}_A.csv | awk -F, '{printf "%d,%.10f\n",$1,$2}' > ${datarobot.EXPORT_FILE_PATH}/${datarobot.MODEL_NAME}_${datarobot.EXECUTE_DATE}_A_CONVERTED.csv
+    sh>: cat "${datarobot.EXPORT_FILE_PATH}/${datarobot.MODEL_NAME}_${datarobot.EXECUTE_DATE}_A.csv" | awk -F, '{printf "%d,%.10f\n",$1,$2}' > "${datarobot.EXPORT_FILE_PATH}/${datarobot.MODEL_NAME}_${datarobot.EXECUTE_DATE}_A_CONVERTED.csv"
 
   +convert_score_b:
-    sh>: cat ${datarobot.EXPORT_FILE_PATH}/${datarobot.MODEL_NAME}_${datarobot.EXECUTE_DATE}_B.csv | awk -F, '{printf "%d,%.10f\n",$1,$2}' > ${datarobot.EXPORT_FILE_PATH}/${datarobot.MODEL_NAME}_${datarobot.EXECUTE_DATE}_B_CONVERTED.csv
+    sh>: cat "${datarobot.EXPORT_FILE_PATH}/${datarobot.MODEL_NAME}_${datarobot.EXECUTE_DATE}_B.csv" | awk -F, '{printf "%d,%.10f\n",$1,$2}' > "${datarobot.EXPORT_FILE_PATH}/${datarobot.MODEL_NAME}_${datarobot.EXECUTE_DATE}_B_CONVERTED.csv"
 
   +insert_pure:
     sh>: git clone ${git.path} && cd ${git.dirname} && git checkout -b SAITO_DATAROBOT_AUTOMATION origin/SAITO_DATAROBOT_AUTOMATION && cd .. && java -cp ${pure.jar} ${pure.class} ${pure.query}/3_GET_RESULT ${pure.properties} && rm -rf ${git.dirname}
 
   +delete_file:
-    sh>: rm ${datarobot.EXPORT_FILE_PATH}/${datarobot.MODEL_NAME}_${datarobot.EXECUTE_DATE}_A.csv ${datarobot.EXPORT_FILE_PATH}/${datarobot.MODEL_NAME}_${datarobot.EXECUTE_DATE}_B.csv ${datarobot.EXPORT_FILE_PATH}/${datarobot.EXPORT_PRED_MEMBER_PREFIX}_${datarobot.EXECUTE_DATE}_A.csv ${datarobot.EXPORT_FILE_PATH}/${datarobot.EXPORT_PRED_MEMBER_PREFIX}_${datarobot.EXECUTE_DATE}_B.csv
+    sh>: rm "${datarobot.EXPORT_FILE_PATH}/${datarobot.MODEL_NAME}_${datarobot.EXECUTE_DATE}_A.csv" "${datarobot.EXPORT_FILE_PATH}/${datarobot.MODEL_NAME}_${datarobot.EXECUTE_DATE}_B.csv" ${datarobot.EXPORT_FILE_PATH}/${datarobot.EXPORT_PRED_MEMBER_PREFIX}_${datarobot.EXECUTE_DATE}_A.csv ${datarobot.EXPORT_FILE_PATH}/${datarobot.EXPORT_PRED_MEMBER_PREFIX}_${datarobot.EXECUTE_DATE}_B.csv
 
   +teardown:
     echo>: finish ${moment(session_time).format('YYYY-MM-DD HH:mm:ss Z')}
