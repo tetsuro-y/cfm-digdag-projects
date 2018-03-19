@@ -1,6 +1,6 @@
 timezone: Asia/Tokyo
 
-#schedule:
+schedule:
   daily>: 07:30:00
 
 _export:
