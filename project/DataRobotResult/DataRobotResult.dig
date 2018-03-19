@@ -85,7 +85,7 @@ _error:
     sh>: cat "${datarobot.EXPORT_FILE_PATH}/${datarobot.MODEL_NAME}_${datarobot.EXECUTE_DATE}_B.csv" | awk -F, '{printf "%d,%.10f\n",$1,$2}' > "${datarobot.EXPORT_FILE_PATH}/${datarobot.MODEL_NAME}_${datarobot.EXECUTE_DATE}_B_CONVERTED.csv"
 
   +insert_pure:
-    sh>: git clone ${git.path} && cd ${git.dirname} && git checkout -b SAITO_DATAROBOT_AUTOMATION origin/SAITO_DATAROBOT_AUTOMATION && cd .. && java -cp ${pure.jar} ${pure.class} ${pure.query}/3_GET_RESULT ${pure.properties} && rm -rf ${git.dirname}
+    sh>: git clone ${git.path} && java -cp ${pure.jar} ${pure.class} ${pure.query}/3_GET_RESULT ${pure.properties} && rm -rf ${git.dirname}
 
   +delete_file:
     sh>: rm "${datarobot.EXPORT_FILE_PATH}/${datarobot.MODEL_NAME}_${datarobot.EXECUTE_DATE}_A.csv" "${datarobot.EXPORT_FILE_PATH}/${datarobot.MODEL_NAME}_${datarobot.EXECUTE_DATE}_B.csv" ${datarobot.EXPORT_FILE_PATH}/${datarobot.EXPORT_PRED_MEMBER_PREFIX}_${datarobot.EXECUTE_DATE}_A.csv ${datarobot.EXPORT_FILE_PATH}/${datarobot.EXPORT_PRED_MEMBER_PREFIX}_${datarobot.EXECUTE_DATE}_B.csv

@@ -1,7 +1,7 @@
 timezone: Asia/Tokyo
 
 #schedule:
-#  daily>: 07:30:00
+  daily>: 07:30:00
 
 _export:
   wf:
@@ -14,7 +14,7 @@ _export:
   # 予測に使用するデータは、前日の購買したかどうかと前々日のユーザ情報を元にする
   datarobot:
     EXECUTE_TYPE: 'TEACHER'
-    EXECUTE_DATE: "${ex_execute_date ? ex_execute_date : moment(session_date).subtract(1, 'days').format('YYYYMMDD')}"
+    EXECUTE_DATE: "${moment(session_date).subtract(1, 'days').format('YYYYMMDD')}" # "${ex_execute_date ? ex_execute_date : moment(session_date).subtract(1, 'days').format('YYYYMMDD')}"
     EXPORT_FILE_PATH: /tmp/puredata/upload/DataRobotPrepare
     EXPORT_TEAC_FILE_PREFIX: DataRobotInput
     S3_PREFIX: s3://st-work/datarobot/input
@@ -64,7 +64,7 @@ _error:
 
 +teacher_get_data:
   +teacher_from_pure:
-    sh>: git clone ${git.path} && cd ${git.dirname} && git checkout -b SAITO_DATAROBOT_AUTOMATION origin/SAITO_DATAROBOT_AUTOMATION && cd .. && java -cp ${pure.jar} ${pure.class} ${pure.query}/0_CREATE_BASE_TABLE ${pure.properties}  && java -cp ${pure.jar} ${pure.class} ${pure.query}/1_GET_TEACHER_DATA ${pure.properties} && rm -rf ${git.dirname}
+    sh>: git clone ${git.path} && java -cp ${pure.jar} ${pure.class} ${pure.query}/0_CREATE_BASE_TABLE ${pure.properties}  && java -cp ${pure.jar} ${pure.class} ${pure.query}/1_GET_TEACHER_DATA ${pure.properties} && rm -rf ${git.dirname}
 
   +teacher_upload_s3:
     sh>: aws s3 cp --profile JP1_DIGDAG ${datarobot.EXPORT_FILE_PATH}/${datarobot.EXPORT_TEAC_FILE_PREFIX}_${datarobot.EXECUTE_DATE}.csv ${datarobot.S3_PREFIX}/${datarobot.EXECUTE_DATE}/${datarobot.EXPORT_TEAC_FILE_PREFIX}_${datarobot.EXECUTE_DATE}.csv

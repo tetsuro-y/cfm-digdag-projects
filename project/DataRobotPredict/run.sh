@@ -13,4 +13,4 @@ digdag push ${PJNAME} --project ${SCRIPT_DIR} --endpoint 10.201.161.10:65432
 # rm zozo-e62ae29b6c4f_cfm.json
 
 # ワークフローの実行
-digdag start ${PJNAME} ${PJNAME} --session now --endpoint 10.201.161.10:65432 -p ex_execute_date="20180315"
+digdag start ${PJNAME} ${PJNAME} --session now --endpoint 10.201.161.10:65432 -p ex_execute_date=""

@@ -1,7 +1,7 @@
 timezone: Asia/Tokyo
 
 #schedule:
-#  daily>: 09:30:00
+  daily>: 09:00:00
 
 _export:
   wf:
@@ -14,7 +14,7 @@ _export:
   # 予測に使用するデータは今現在までにある一番最新の情報を使用する
   datarobot:
     EXECUTE_TYPE: 'PREDICT'
-    EXECUTE_DATE: "${ex_execute_date ? ex_execute_date : moment(session_date).format('YYYYMMDD')}"
+    EXECUTE_DATE: "${moment(session_date).format('YYYYMMDD')}" # "${ex_execute_date ? ex_execute_date : moment(session_date).format('YYYYMMDD')}"
     EXPORT_FILE_PATH: /tmp/puredata/upload/DataRobotPredict
     EXPORT_PRED_FILE_PREFIX: DataRobotPredict
     EXPORT_PRED_MEMBER_PREFIX: DataRobotPredictMember
@@ -65,7 +65,7 @@ _error:
 
 +predict_get_data:
   +from_pure:
-    sh>: git clone ${git.path} && cd ${git.dirname} && git checkout -b SAITO_DATAROBOT_AUTOMATION origin/SAITO_DATAROBOT_AUTOMATION && cd .. && java -cp ${pure.jar} ${pure.class} ${pure.query}/0_CREATE_BASE_TABLE ${pure.properties}  && java -cp ${pure.jar} ${pure.class} ${pure.query}/2_GET_PREDICTION ${pure.properties} && rm -rf ${git.dirname}
+    sh>: git clone ${git.path} && java -cp ${pure.jar} ${pure.class} ${pure.query}/0_CREATE_BASE_TABLE ${pure.properties}  && java -cp ${pure.jar} ${pure.class} ${pure.query}/2_GET_PREDICTION ${pure.properties} && rm -rf ${git.dirname}
 
   +prd_a_upload_s3:
     sh>: aws s3 cp --profile JP1_DIGDAG ${datarobot.EXPORT_FILE_PATH}/${datarobot.EXPORT_PRED_FILE_PREFIX}_${datarobot.EXECUTE_DATE}_A.csv ${datarobot.S3_PREFIX}/${datarobot.EXECUTE_DATE}/${datarobot.EXPORT_PRED_FILE_PREFIX}_${datarobot.EXECUTE_DATE}_A.csv
