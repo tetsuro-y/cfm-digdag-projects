@@ -1,5 +1,0 @@
-_export:
-    ga_start_date: "${ ex_pure_start_dt ? ex_pure_start_dt : \"CURRENT_DATE\"}"
-
-+task:
-  echo>: ${ga_start_date}
