@@ -98,6 +98,7 @@ FROM (
             HVU_SENDDT >= '${pd_base_date}'::DATE + INTERVAL '-8DAYS'
             AND HVU_CHANNELID = 1--メール
             AND HVU_CHANNEL_DETAILID = 3--トランザクション
+            AND HVU_VISITTIME >= HVU_SENDDT::TIMESTAMP
         GROUP BY
             VD_SENDDT
             ,VD_CAMPAIGNID
