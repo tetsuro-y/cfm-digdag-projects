@@ -1,14 +1,14 @@
 BEGIN
 ;
-/* PUSH ”zMŽÀÑ‰ß‹Žƒf[ƒ^•ª‚Ì“o˜^ */
+/* PUSH é…ä¿¡å®Ÿç¸¾éŽåŽ»ãƒ‡ãƒ¼ã‚¿åˆ†ã®ç™»éŒ² */
 CREATE TEMP TABLE TAT_DB_RESULT_PUSH_TMP_TERM AS
 SELECT
     '20151101' AS TT_STARTDT
     ,'20180331' AS TT_ENDDT
 ;
 
-/* ”zM”‚ÌWŒv */
-/* PUSHTYPECATEGORYID’PˆÊ‚Ì”zM”‚ðŽæ“¾ */
+/* é…ä¿¡æ•°ã®é›†è¨ˆ */
+/* PUSHTYPECATEGORYIDå˜ä½ã®é…ä¿¡æ•°ã‚’å–å¾— */
 CREATE TEMP TABLE TAT_DB_RESULT_TMP_PUSH_SEND_PUSHTYPE
 (
     TPSP_SENDDT DATE
@@ -21,62 +21,58 @@ DISTRIBUTE ON (TPSP_SENDDT, TPSP_OSID, TPSP_PUSHTYPECATEGORYID)
 ;
 
 INSERT INTO TAT_DB_RESULT_TMP_PUSH_SEND_PUSHTYPE
-/* ƒp[ƒ\ƒiƒ‰ƒCƒYˆÈŠO‚ðWŒv */
+/* ãƒ‘ãƒ¼ã‚½ãƒŠãƒ©ã‚¤ã‚ºä»¥å¤–ã‚’é›†è¨ˆ */
 SELECT
     MS_SENDDT
     ,MS_DEVICETYPEID
     ,MS_PUSHTYPECATEGORYID
     ,null AS MS_ITEMID
-    ,SUM(MS_CNT_SEND) /* MEMBERID‚ª‘¶Ý‚µ‚È‚¢ƒf[ƒ^E‘¶Ý‚·‚éƒf[ƒ^‚Ì‡ŽZ */
+    ,SUM(MS_CNT_SEND) /* MEMBERIDãŒå­˜åœ¨ã—ãªã„ãƒ‡ãƒ¼ã‚¿ãƒ»å­˜åœ¨ã™ã‚‹ãƒ‡ãƒ¼ã‚¿ã®åˆç®— */
 FROM (
-    /* MEMBERID‚ª‘¶Ý‚·‚é”zMƒf[ƒ^ */
+    /* MEMBERIDãŒå­˜åœ¨ã™ã‚‹é…ä¿¡ãƒ‡ãƒ¼ã‚¿ */
     SELECT
-        DATE_TRUNC('DAY', CONTACTDT) AS MS_SENDDT
-        ,PNDEVICETYPEID AS MS_DEVICETYPEID
-        ,PUSHTYPECATEGORYID AS MS_PUSHTYPECATEGORYID
-        ,NVL(COUNT(PNDEVICETYPEID), 0) AS MS_CNT_SEND
-    FROM
-        TPNPUSHAPPHISTORY
-    INNER JOIN TPUSHNOTIFICATION ON PUSHNOTIFICATIONID = PNPUSHNOTIFICATIONID
-    WHERE
+        DATE_TRUNC('DAY', DM_CONTACTDT) AS MS_SENDDT
+        ,DM_DEVICETYPEID AS MS_DEVICETYPEID
+        ,DM_PUSHTYPECATEGORYID AS MS_PUSHTYPECATEGORYID
+        ,COUNT(DM_DEVICETYPEID) AS MS_CNT_SEND
+    FROM (
+        /* åŒä¸€ãƒ¦ãƒ¼ã‚¶ãƒ¼ã«å¯¾ã™ã‚‹é…ä¿¡ã‚’ã‚°ãƒ«ãƒ¼ãƒ”ãƒ³ã‚°ã™ã‚‹ãŸã‚ã«ã€åŒä¸€MEMEBERID,CONTACTDTã®ãƒ‡ãƒ¼ã‚¿ãŒå­˜åœ¨ã—ãŸå ´åˆã¯æœ€æ–°ã®ãƒ‡ãƒ¼ã‚¿ã‚’æ­£ã¨ã™ã‚‹ */
+        SELECT
+            CONTACTDT AS DM_CONTACTDT
+            ,PNDEVICETYPEID AS DM_DEVICETYPEID
+            ,PUSHTYPECATEGORYID AS DM_PUSHTYPECATEGORYID
+            ,ROW_NUMBER() OVER (PARTITION BY MEMBERID, CONTACTDT  ORDER BY PNMODIFYDT DESC) AS DM_ROWNUMBER /* æœ€æ–°ã®MODIFYDTã®ãƒ¬ã‚³ãƒ¼ãƒ‰ã‚’æ­£ã¨ã™ã‚‹ãŸã‚ */
+        FROM
+            TPNPUSHAPPHISTORY
+            INNER JOIN TPUSHNOTIFICATION ON PUSHNOTIFICATIONID = PNPUSHNOTIFICATIONID
+        WHERE
         CONTACTDT >= (SELECT TT_STARTDT::DATE FROM TAT_DB_RESULT_PUSH_TMP_TERM)
         AND CONTACTDT < (SELECT TT_ENDDT::DATE FROM TAT_DB_RESULT_PUSH_TMP_TERM)
-        AND PUSHTYPECATEGORYID IN (2, 3, 6)  /* 2:V’…‚¨‚Ü‚Æ‚ßA3:V’…ƒŠƒAƒ‹ƒ^ƒCƒ€A6:ƒ}ƒX */
-        AND PUSHNOTIFICATIONID IN (
-                /* https://paper.dropbox.com/doc/SQL-0SOkloZHInKaefYHUPxal
-                 ƒAƒvƒŠ‚ÌƒCƒ“ƒXƒg[ƒ‹EƒAƒ“ƒCƒ“ƒXƒg[ƒ‹‚ðŒJ‚è•Ô‚·“™‚µ‚½ê‡1ƒ†[ƒU‚É‘Î‚µ‚Ä•¡”ƒŒƒR[ƒh‚ª‘¶Ý‚µA
-                 Œ‹‰Ê”zM”‚ªŽÀÛ‚æ‚è‚à‘½‚­Œvã‚³‚ê‚Ä‚µ‚Ü‚¤—á‚ª‚ ‚é‚½‚ß‰º‹LðŒ‚ð‹LÚ‚µ‚Äƒ†[ƒU‚ðˆêˆÓ‚É‚·‚é */
-                SELECT UQPUSHNOTIFICATIONID
-                FROM (
-                        SELECT
-                            PNPUSHNOTIFICATIONID AS UQPUSHNOTIFICATIONID
-                            ,ROW_NUMBER() OVER (PARTITION BY PNMEMBERID ORDER BY PNMODIFYDT DESC) AS ROWNUMBER /* ÅV‚ÌMODIFYDT‚ÌƒŒƒR[ƒh‚ð³‚Æ‚·‚é‚½‚ß */
-                        FROM
-                            TPUSHNOTIFICATION
-                    ) AS GETROWNUM
-                WHERE
-                    ROWNUMBER = 1
-        )
-    GROUP BY 
-        MS_SENDDT
-        ,MS_PUSHTYPECATEGORYID
-        ,MS_DEVICETYPEID
+        AND PUSHTYPECATEGORYID IN (2, 3, 6)  /* 2:æ–°ç€ãŠã¾ã¨ã‚ã€3:æ–°ç€ãƒªã‚¢ãƒ«ã‚¿ã‚¤ãƒ ã€6:ãƒžã‚¹ */
+        AND MEMBERID IS NOT NULL
+    ) AS DEP_MEMBER /* PREFIX=DM */
+    WHERE
+        DM_ROWNUMBER = 1
+    GROUP BY
+       MS_SENDDT
+       ,MS_DEVICETYPEID
+       ,MS_PUSHTYPECATEGORYID
 
     UNION ALL
 
-    /* MEMBERID‚ª‘¶Ý‚µ‚È‚¢”zMƒf[ƒ^ */
+    /* MEMBERIDãŒå­˜åœ¨ã—ãªã„é…ä¿¡ãƒ‡ãƒ¼ã‚¿ */
     SELECT
         DATE_TRUNC('DAY', CONTACTDT) AS MS_SENDDT
         ,PNDEVICETYPEID AS MS_DEVICETYPEID
         ,PUSHTYPECATEGORYID AS MS_PUSHTYPECATEGORYID
-        ,NVL(COUNT(PNDEVICETYPEID), 0) AS MS_CNT_SEND
+        ,COUNT(PNDEVICETYPEID) AS MS_CNT_SEND
     FROM 
         TPNPUSHAPPHISTORY
     INNER JOIN TPUSHNOTIFICATION ON PUSHNOTIFICATIONID = PNPUSHNOTIFICATIONID
     WHERE
         CONTACTDT >= (SELECT TT_STARTDT::DATE FROM TAT_DB_RESULT_PUSH_TMP_TERM)
         AND CONTACTDT < (SELECT TT_ENDDT::DATE FROM TAT_DB_RESULT_PUSH_TMP_TERM)
-        AND PUSHTYPECATEGORYID IN (2, 3, 6)  /* 2:V’…‚¨‚Ü‚Æ‚ßA3:V’…ƒŠƒAƒ‹ƒ^ƒCƒ€A6:ƒ}ƒX */
+        AND PUSHTYPECATEGORYID IN (2, 3, 6)  /* 2:æ–°ç€ãŠã¾ã¨ã‚ã€3:æ–°ç€ãƒªã‚¢ãƒ«ã‚¿ã‚¤ãƒ ã€6:ãƒžã‚¹ */
         AND MEMBERID IS NULL
     GROUP BY 
         MS_SENDDT
@@ -90,52 +86,49 @@ GROUP BY
 
 UNION ALL
 
-/* ƒp[ƒ\ƒiƒ‰ƒCƒY‚ðWŒv */
+/* ãƒ‘ãƒ¼ã‚½ãƒŠãƒ©ã‚¤ã‚ºã‚’é›†è¨ˆ */
 SELECT
     MS_SENDDT
     ,MS_DEVICETYPEID
     ,MS_PUSHTYPECATEGORYID
     ,MS_ITEMID
-    ,SUM(MS_CNT_SEND) /* MEMBERID‚ª‘¶Ý‚µ‚È‚¢ƒf[ƒ^E‘¶Ý‚·‚éƒf[ƒ^‚Ì‡ŽZ */
+    ,SUM(MS_CNT_SEND) /* MEMBERIDãŒå­˜åœ¨ã—ãªã„ãƒ‡ãƒ¼ã‚¿ãƒ»å­˜åœ¨ã™ã‚‹ãƒ‡ãƒ¼ã‚¿ã®åˆç®— */
 FROM (
-    /* MEMBERID‚ª‘¶Ý‚·‚é”zMƒf[ƒ^ */
+    /* MEMBERIDãŒå­˜åœ¨ã™ã‚‹é…ä¿¡ãƒ‡ãƒ¼ã‚¿ */
     SELECT
-        DATE_TRUNC('DAY', CONTACTDT) AS MS_SENDDT
-        ,PNDEVICETYPEID AS MS_DEVICETYPEID
-        ,PUSHTYPECATEGORYID AS MS_PUSHTYPECATEGORYID
-        ,ITEMID AS MS_ITEMID
-        ,NVL(COUNT(PNDEVICETYPEID), 0) AS MS_CNT_SEND
-    FROM
-        TPNPUSHAPPHISTORY
-    INNER JOIN TPUSHNOTIFICATION ON PUSHNOTIFICATIONID = PNPUSHNOTIFICATIONID
-    WHERE
+        DATE_TRUNC('DAY', DM_CONTACTDT) AS MS_SENDDT
+        ,DM_DEVICETYPEID AS MS_DEVICETYPEID
+        ,DM_PUSHTYPECATEGORYID AS MS_PUSHTYPECATEGORYID
+        ,DM_ITEMID AS MS_ITEMID
+        ,COUNT(DM_DEVICETYPEID) AS MS_CNT_SEND
+    FROM (
+        /* åŒä¸€ãƒ¦ãƒ¼ã‚¶ãƒ¼ã«å¯¾ã™ã‚‹é…ä¿¡ã‚’ã‚°ãƒ«ãƒ¼ãƒ”ãƒ³ã‚°ã™ã‚‹ãŸã‚ã«ã€åŒä¸€MEMEBERID,CONTACTDTã®ãƒ‡ãƒ¼ã‚¿ãŒå­˜åœ¨ã—ãŸå ´åˆã¯æœ€æ–°ã®ãƒ‡ãƒ¼ã‚¿ã‚’æ­£ã¨ã™ã‚‹ */
+        SELECT
+            CONTACTDT AS DM_CONTACTDT
+            ,PNDEVICETYPEID AS DM_DEVICETYPEID
+            ,PUSHTYPECATEGORYID AS DM_PUSHTYPECATEGORYID
+            ,ITEMID AS DM_ITEMID
+            ,ROW_NUMBER() OVER (PARTITION BY MEMBERID, CONTACTDT  ORDER BY PNMODIFYDT DESC) AS DM_ROWNUMBER /* æœ€æ–°ã®MODIFYDTã®ãƒ¬ã‚³ãƒ¼ãƒ‰ã‚’æ­£ã¨ã™ã‚‹ãŸã‚ */
+        FROM
+            TPNPUSHAPPHISTORY
+            INNER JOIN TPUSHNOTIFICATION ON PUSHNOTIFICATIONID = PNPUSHNOTIFICATIONID
+        WHERE
         CONTACTDT >= (SELECT TT_STARTDT::DATE FROM TAT_DB_RESULT_PUSH_TMP_TERM)
         AND CONTACTDT < (SELECT TT_ENDDT::DATE FROM TAT_DB_RESULT_PUSH_TMP_TERM)
-        AND PUSHTYPECATEGORYID = 1 /* 1:ƒp[ƒ\ƒiƒ‰ƒCƒY */
-        AND PUSHNOTIFICATIONID IN (
-                /* https://paper.dropbox.com/doc/SQL-0SOkloZHInKaefYHUPxal
-                 ƒAƒvƒŠ‚ÌƒCƒ“ƒXƒg[ƒ‹EƒAƒ“ƒCƒ“ƒXƒg[ƒ‹‚ðŒJ‚è•Ô‚·“™‚µ‚½ê‡1ƒ†[ƒU‚É‘Î‚µ‚Ä•¡”ƒŒƒR[ƒh‚ª‘¶Ý‚µA
-                 Œ‹‰Ê”zM”‚ªŽÀÛ‚æ‚è‚à‘½‚­Œvã‚³‚ê‚Ä‚µ‚Ü‚¤—á‚ª‚ ‚é‚½‚ß‰º‹LðŒ‚ð‹LÚ‚µ‚Äƒ†[ƒU‚ðˆêˆÓ‚É‚·‚é */
-                SELECT UQPUSHNOTIFICATIONID
-                FROM (
-                        SELECT
-                            PNPUSHNOTIFICATIONID AS UQPUSHNOTIFICATIONID
-                            ,ROW_NUMBER() OVER (PARTITION BY PNMEMBERID ORDER BY PNMODIFYDT DESC) AS ROWNUMBER /* ÅV‚ÌMODIFYDT‚ÌƒŒƒR[ƒh‚ð³‚Æ‚·‚é‚½‚ß */
-                        FROM
-                            TPUSHNOTIFICATION
-                    ) AS GETROWNUM
-                WHERE
-                    ROWNUMBER = 1
-        )
-    GROUP BY 
-        MS_SENDDT
-        ,MS_PUSHTYPECATEGORYID
-        ,MS_DEVICETYPEID
-        ,MS_ITEMID
+        AND PUSHTYPECATEGORYID = 1 /* ãƒ‘ãƒ¼ã‚½ãƒŠãƒ©ã‚¤ã‚º */
+        AND MEMBERID IS NOT NULL
+    ) AS DEP_MEMBER /* PREFIX=DM */
+    WHERE
+        DM_ROWNUMBER = 1
+    GROUP BY
+       MS_SENDDT
+       ,MS_DEVICETYPEID
+       ,MS_PUSHTYPECATEGORYID
+       ,MS_ITEMID
 
     UNION ALL
 
-    /* MEMBERID‚ª‘¶Ý‚µ‚È‚¢”zMƒf[ƒ^ */
+    /* MEMBERIDãŒå­˜åœ¨ã—ãªã„é…ä¿¡ãƒ‡ãƒ¼ã‚¿ */
     SELECT
         DATE_TRUNC('DAY', CONTACTDT) AS MS_SENDDT
         ,PNDEVICETYPEID AS MS_DEVICETYPEID
@@ -148,7 +141,7 @@ FROM (
     WHERE
         CONTACTDT >= (SELECT TT_STARTDT::DATE FROM TAT_DB_RESULT_PUSH_TMP_TERM)
         AND CONTACTDT < (SELECT TT_ENDDT::DATE FROM TAT_DB_RESULT_PUSH_TMP_TERM)
-        AND PUSHTYPECATEGORYID = 1 /* 1:ƒp[ƒ\ƒiƒ‰ƒCƒY */
+        AND PUSHTYPECATEGORYID = 1 /* 1:ãƒ‘ãƒ¼ã‚½ãƒŠãƒ©ã‚¤ã‚º */
         AND MEMBERID IS NULL
     GROUP BY 
         MS_SENDDT
@@ -163,8 +156,8 @@ GROUP BY
     ,MS_ITEMID
 ;
 
-/* —¬“ü”‚ÌWŒv */
-/* CAMPAIGNID, CHANNEL_DETAILID‚²‚Æ‚Ì—¬“ü”‚ðWŒv */
+/* æµå…¥æ•°ã®é›†è¨ˆ */
+/* CAMPAIGNID, CHANNEL_DETAILIDã”ã¨ã®æµå…¥æ•°ã‚’é›†è¨ˆ */
 CREATE TEMP TABLE TAT_DB_RESULT_TMP_PUSH_CLICK_CAMPAIGN
 (
     TPCC_CLICKDT DATE
@@ -208,7 +201,7 @@ FROM (
         ,CC_CHANNEL_DETAILID
 ) AS CLICK_CNT /* PREFIX = CC */
 INNER JOIN (
-    /* ”zM”‚ðƒLƒƒƒ“ƒy[ƒ“’PˆÊ‚ÅŠ„‚é‚½‚ß‚ÉA‘ÎÛ“ú•t‚ÌƒLƒƒƒ“ƒy[ƒ“”‚ðŽæ“¾ */
+    /* é…ä¿¡æ•°ã‚’ã‚­ãƒ£ãƒ³ãƒšãƒ¼ãƒ³å˜ä½ã§å‰²ã‚‹ãŸã‚ã«ã€å¯¾è±¡æ—¥ä»˜ã®ã‚­ãƒ£ãƒ³ãƒšãƒ¼ãƒ³æ•°ã‚’å–å¾— */
     SELECT
         HVU_SENDDT AS CCN_SENDDT
         ,HVU_CHANNEL_DETAILID AS CCN_CHANNEL_DETAILID
@@ -227,7 +220,7 @@ INNER JOIN (
     AND CC_CHANNEL_DETAILID = CCN_CHANNEL_DETAILID
 ;
 
-/* ƒ}ƒXEV’…Eƒp[ƒ\ƒiƒ‰ƒCƒYPUSH ”zM”,—¬“ü”, Œo—R”„ã */
+/* ãƒžã‚¹ãƒ»æ–°ç€ãƒ»ãƒ‘ãƒ¼ã‚½ãƒŠãƒ©ã‚¤ã‚ºPUSH é…ä¿¡æ•°,æµå…¥æ•°, çµŒç”±å£²ä¸Š */
 CREATE TEMP TABLE TAT_DB_RESULT_PUSH_TMP_SEND
 (
     PTS_SENDDT DATE
@@ -241,14 +234,14 @@ CREATE TEMP TABLE TAT_DB_RESULT_PUSH_TMP_SEND
 DISTRIBUTE ON (PTS_SENDDT, PTS_CHANNEL_DETAILID, PTS_CAMPAIGNID, PTS_OSID)
 ;
 
-/* ƒ}ƒX  ”zM”,—¬“ü”, Œo—R”„ã */
+/* ãƒžã‚¹  é…ä¿¡æ•°,æµå…¥æ•°, çµŒç”±å£²ä¸Š */
 INSERT INTO TAT_DB_RESULT_PUSH_TMP_SEND
 SELECT
     MSD_SENDDT
     ,MCD_CHANNEL_DETAILID
     ,MCD_CAMPAIGNID
     ,MSD_OSID
-    ,ROUND(MSD_CNT_SEND / MCD_CNT_CAMPAIGN, 0) /* ”zM”‚ð“–“ú‚ÌƒLƒƒƒ“ƒy[ƒ“”‚ÅŠ„‚é */
+    ,ROUND(MSD_CNT_SEND / MCD_CNT_CAMPAIGN, 0) /* é…ä¿¡æ•°ã‚’å½“æ—¥ã®ã‚­ãƒ£ãƒ³ãƒšãƒ¼ãƒ³æ•°ã§å‰²ã‚‹ */
     ,MCD_CNT_CLICK
     ,MCD_REVENUE
 FROM (
@@ -260,7 +253,7 @@ FROM (
         FROM
             TAT_DB_RESULT_TMP_PUSH_SEND_PUSHTYPE
         WHERE
-            TPSP_PUSHTYPECATEGORYID = 6 /* ƒ}ƒX */
+            TPSP_PUSHTYPECATEGORYID = 6 /* ãƒžã‚¹ */
     ) AS MASS_SENDDATA /* PREFIX = MSD */
     INNER JOIN (
         SELECT
@@ -274,14 +267,14 @@ FROM (
         FROM
             TAT_DB_RESULT_TMP_PUSH_CLICK_CAMPAIGN
         WHERE
-            TPCC_CHANNEL_DETAILID = 2 /* ƒ}ƒX */
+            TPCC_CHANNEL_DETAILID = 2 /* ãƒžã‚¹ */
     ) AS MASS_CLICKDATA /*PREFIX = MCD */
     ON MSD_SENDDT = MCD_CLICKDT
     AND MSD_OSID = MCD_OSID
 
 UNION ALL
 
-/* V’…‚¨‚Ü‚Æ‚ß  ”zM”,—¬“ü”, Œo—R”„ã */
+/* æ–°ç€ãŠã¾ã¨ã‚  é…ä¿¡æ•°,æµå…¥æ•°, çµŒç”±å£²ä¸Š */
 SELECT
     NSSD_SENDDT
     ,NSCD_CHANNEL_DETAILID
@@ -299,7 +292,7 @@ FROM (
         FROM
             TAT_DB_RESULT_TMP_PUSH_SEND_PUSHTYPE
         WHERE
-            TPSP_PUSHTYPECATEGORYID = 2 /* V’…‚¨‚Ü‚Æ‚ß */
+            TPSP_PUSHTYPECATEGORYID = 2 /* æ–°ç€ãŠã¾ã¨ã‚ */
     ) AS NEW_SUM_SENDDATA /* PREFIX = NSSD */
     INNER JOIN (
         SELECT
@@ -313,15 +306,15 @@ FROM (
         FROM
             TAT_DB_RESULT_TMP_PUSH_CLICK_CAMPAIGN
         WHERE
-            TPCC_CHANNEL_DETAILID = 1 /* V’… */
-            AND TPCC_CAMPAIGNID = 1 /* V’…‚¨‚Ü‚Æ‚ß */
+            TPCC_CHANNEL_DETAILID = 1 /* æ–°ç€ */
+            AND TPCC_CAMPAIGNID = 1 /* æ–°ç€ãŠã¾ã¨ã‚ */
     ) AS NEW_SUM_CLICKDATA /*PREFIX = NSCD */ 
     ON NSSD_SENDDT = NSCD_CLICKDT
     AND NSSD_OSID = NSCD_OSID
 
 UNION ALL
 
-/* V’…ƒŠƒAƒ‹ƒ^ƒCƒ€  ”zM”,—¬“ü”, Œo—R”„ã */
+/* æ–°ç€ãƒªã‚¢ãƒ«ã‚¿ã‚¤ãƒ   é…ä¿¡æ•°,æµå…¥æ•°, çµŒç”±å£²ä¸Š */
 SELECT
     NRSD_SENDDT
     ,NRCD_CHANNEL_DETAILID
@@ -339,7 +332,7 @@ FROM (
         FROM
             TAT_DB_RESULT_TMP_PUSH_SEND_PUSHTYPE
         WHERE
-            TPSP_PUSHTYPECATEGORYID = 3 /* V’…ƒŠƒAƒ‹ƒ^ƒCƒ€ */
+            TPSP_PUSHTYPECATEGORYID = 3 /* æ–°ç€ãƒªã‚¢ãƒ«ã‚¿ã‚¤ãƒ  */
     ) AS NEW_REALTIME_SENDDATA /* PREFIX = NRSD */
     INNER JOIN (
         SELECT
@@ -353,15 +346,15 @@ FROM (
         FROM
             TAT_DB_RESULT_TMP_PUSH_CLICK_CAMPAIGN
         WHERE
-            TPCC_CHANNEL_DETAILID = 1 /* V’… */
-            AND TPCC_CAMPAIGNID = 2 /* V’…ƒŠƒAƒ‹ƒ^ƒCƒ€ */
+            TPCC_CHANNEL_DETAILID = 1 /* æ–°ç€ */
+            AND TPCC_CAMPAIGNID = 2 /* æ–°ç€ãƒªã‚¢ãƒ«ã‚¿ã‚¤ãƒ  */
     ) AS NEW_REALTIME_CLICKDATA /*PREFIX = NRCD */
     ON NRSD_SENDDT = NRCD_CLICKDT
     AND NRSD_OSID = NRCD_OSID
 
 UNION ALL
 
-/* ƒp[ƒ\ƒiƒ‰ƒCƒYPUSH  ”zM”,—¬“ü”, Œo—R”„ã */
+/* ãƒ‘ãƒ¼ã‚½ãƒŠãƒ©ã‚¤ã‚ºPUSH  é…ä¿¡æ•°,æµå…¥æ•°, çµŒç”±å£²ä¸Š */
 SELECT
     PSD_SENDDT
     ,PCD_CHANNEL_DETAILID
@@ -380,7 +373,7 @@ FROM (
         FROM
             TAT_DB_RESULT_TMP_PUSH_SEND_PUSHTYPE
             INNER JOIN (
-                /* TPNNOTICEDELIVERY‚©‚çCAMPAIGNID‚Ì’Šo */
+                /* TPNNOTICEDELIVERYã‹ã‚‰CAMPAIGNIDã®æŠ½å‡º */
                 SELECT DISTINCT
                     TPSP_ITEMID AS CAG_ITEMID
                     ,PNDCAMPAIGNID AS CAG_CAMPAIGNID
@@ -391,7 +384,7 @@ FROM (
             ) AS CAMPAIGN_GROUP /*PREFIX = CAG */
             ON CAG_ITEMID = TPSP_ITEMID
         WHERE
-            TPSP_PUSHTYPECATEGORYID = 1 /* ƒp[ƒ\ƒiƒ‰ƒCƒY */
+            TPSP_PUSHTYPECATEGORYID = 1 /* ãƒ‘ãƒ¼ã‚½ãƒŠãƒ©ã‚¤ã‚º */
         GROUP BY
             PSD_SENDDT
             ,PSD_OSID
@@ -410,14 +403,14 @@ FROM (
         FROM
             TAT_DB_RESULT_TMP_PUSH_CLICK_CAMPAIGN
         WHERE
-            TPCC_CHANNEL_DETAILID = 4 /* ƒp[ƒ\ƒiƒ‰ƒCƒY */
+            TPCC_CHANNEL_DETAILID = 4 /* ãƒ‘ãƒ¼ã‚½ãƒŠãƒ©ã‚¤ã‚º */
     ) AS PERSONALIZE_CLICKDATA /*PREFIX = PCD */
     ON PSD_SENDDT = PCD_CLICKDT
     AND PSD_OSID = PCD_OSID
     AND PSD_CAMPAIGNID = PCD_CAMPAIGNID
 ;
 
-/* “úŽŸŽÀÑXV */
+/* æ—¥æ¬¡å®Ÿç¸¾æ›´æ–° */
 DELETE
     FROM TAT_DB_RESULT_APPPUSH
 WHERE
@@ -426,7 +419,7 @@ WHERE
 ;
 
 INSERT INTO TAT_DB_RESULT_APPPUSH
-/* ŽÀÑŠi”[—pƒe[ƒuƒ‹‚É•Û‘¶ */
+/* å®Ÿç¸¾æ ¼ç´ç”¨ãƒ†ãƒ¼ãƒ–ãƒ«ã«ä¿å­˜ */
 SELECT 
     PSI_CHANNEL_DETAILID AS RAP_CHANNEL_DETAILID
     ,PSI_CAMPAIGNID AS RAP_CAMPAIGNID
