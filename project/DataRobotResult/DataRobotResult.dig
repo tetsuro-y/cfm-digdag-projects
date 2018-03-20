@@ -1,0 +1,96 @@
+timezone: Asia/Tokyo
+
+_export:
+  wf:
+    name: "3. DataRobot結果データ取得処理 (DataRobotResult) by DigDag"
+
+  git:
+    path: http://10.201.161.10:8084/git/CFM/sql-digdag.git
+    dirname: sql-digdag
+
+  # 結果データは、外部からのパラメータ渡しで実行日を決定する
+  datarobot:
+    EXECUTE_TYPE: 'RESULT'
+    EXECUTE_DATE: "${ex_execute_date ? ex_execute_date : moment(session_date).format('YYYYMMDD')}"
+    MODEL_NAME: "${ex_model_name}"
+    THRESHOLD: "${ex_threshold}"
+    EXPORT_FILE_PATH: /tmp/puredata/upload/DataRobotResult
+    EXPORT_PRED_MEMBER_PREFIX: DataRobotPredictMember
+    S3_PREFIX: s3://st-work/datarobot
+
+  pure:
+    jar: /var/lib/digdag/puredata/nzExecuteSql-1.0.2.jar
+    class: jp.stk.cfm.ExecuteSqls
+    properties: /var/lib/digdag/puredata/dbconnection.properties
+    query: sql-digdag/sql/BATCH/DataRobot
+    log_dir: /tmp/puredata/log/DataRobotPrepare
+
+  my_param:
+    - DIGDAGSERVER_HOST
+    - DIGDAGSERVER_ENV
+
+  slack:
+    webhook: https://hooks.slack.com/services/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
+    channel: '#cfm_science_team'
+    username: digdag
+    icon_emoji: ghost
+    template_path: notification
+    good: good-template.yml
+    danger: danger-template.yml
+
+  plugin:
+    repositories:
+      - https://jitpack.io
+    dependencies:
+      - com.github.szyn:digdag-slack:0.1.2
+  # Set Reqired params
+  webhook_url: ${slack.webhook}
+  # Set Option params
+  workflow_name: ${wf.name}
+
++prepare_environments:
+  py>: tasks.PrepareEnviroments.set_parameters
+
+_error:
+  slack>: ${slack.template_path}/${slack.danger}
+
++prepare_environment:
+  +prep_pure:
+    sh>: mkdir -p ${pure.log_dir} && echo ${pure.log_dir}
+
+  +prep_datarobot:
+    sh>: mkdir -p ${datarobot.EXPORT_FILE_PATH}
+
+  +echo_param:
+    sh>: echo "EXECUTE_DATE=${datarobot.EXECUTE_DATE} MODEL_NAME=${datarobot.MODEL_NAME} THRESHOLD=${datarobot.THRESHOLD} TABLE_NAME=${DIGDAGSERVER_ENV}_${session_id}"
+
++result_get_data:
+  +get_pred_a_score_s3:
+    sh>: aws s3 cp --profile JP1_DIGDAG "${datarobot.S3_PREFIX}/output/${datarobot.EXECUTE_DATE}/${datarobot.MODEL_NAME}_${datarobot.EXECUTE_DATE}_A.csv" "${datarobot.EXPORT_FILE_PATH}/${datarobot.MODEL_NAME}_${datarobot.EXECUTE_DATE}_A.csv"
+
+  +get_pred_b_score_s3:
+    sh>: aws s3 cp --profile JP1_DIGDAG "${datarobot.S3_PREFIX}/output/${datarobot.EXECUTE_DATE}/${datarobot.MODEL_NAME}_${datarobot.EXECUTE_DATE}_B.csv" "${datarobot.EXPORT_FILE_PATH}/${datarobot.MODEL_NAME}_${datarobot.EXECUTE_DATE}_B.csv"
+
+  +get_pred_a_member_s3:
+    sh>: aws s3 cp --profile JP1_DIGDAG ${datarobot.S3_PREFIX}/input/${datarobot.EXECUTE_DATE}/${datarobot.EXPORT_PRED_MEMBER_PREFIX}_${datarobot.EXECUTE_DATE}_A.csv ${datarobot.EXPORT_FILE_PATH}/${datarobot.EXPORT_PRED_MEMBER_PREFIX}_${datarobot.EXECUTE_DATE}_A.csv
+
+  +get_pred_b_member_s3:
+    sh>: aws s3 cp --profile JP1_DIGDAG ${datarobot.S3_PREFIX}/input/${datarobot.EXECUTE_DATE}/${datarobot.EXPORT_PRED_MEMBER_PREFIX}_${datarobot.EXECUTE_DATE}_B.csv ${datarobot.EXPORT_FILE_PATH}/${datarobot.EXPORT_PRED_MEMBER_PREFIX}_${datarobot.EXECUTE_DATE}_B.csv
+
+  # EXPONENTIAL表記を数字表記に変換する
+  +convert_score_a:
+    sh>: cat "${datarobot.EXPORT_FILE_PATH}/${datarobot.MODEL_NAME}_${datarobot.EXECUTE_DATE}_A.csv" | awk -F, '{printf "%d,%.10f\n",$1,$2}' > "${datarobot.EXPORT_FILE_PATH}/${datarobot.MODEL_NAME}_${datarobot.EXECUTE_DATE}_A_CONVERTED.csv"
+
+  +convert_score_b:
+    sh>: cat "${datarobot.EXPORT_FILE_PATH}/${datarobot.MODEL_NAME}_${datarobot.EXECUTE_DATE}_B.csv" | awk -F, '{printf "%d,%.10f\n",$1,$2}' > "${datarobot.EXPORT_FILE_PATH}/${datarobot.MODEL_NAME}_${datarobot.EXECUTE_DATE}_B_CONVERTED.csv"
+
+  +insert_pure:
+    sh>: git clone ${git.path} && java -cp ${pure.jar} ${pure.class} ${pure.query}/3_GET_RESULT ${pure.properties} && rm -rf ${git.dirname}
+
+  +delete_file:
+    sh>: rm "${datarobot.EXPORT_FILE_PATH}/${datarobot.MODEL_NAME}_${datarobot.EXECUTE_DATE}_A.csv" "${datarobot.EXPORT_FILE_PATH}/${datarobot.MODEL_NAME}_${datarobot.EXECUTE_DATE}_B.csv" ${datarobot.EXPORT_FILE_PATH}/${datarobot.EXPORT_PRED_MEMBER_PREFIX}_${datarobot.EXECUTE_DATE}_A.csv ${datarobot.EXPORT_FILE_PATH}/${datarobot.EXPORT_PRED_MEMBER_PREFIX}_${datarobot.EXECUTE_DATE}_B.csv
+
+  +teardown:
+    echo>: finish ${moment(session_time).format('YYYY-MM-DD HH:mm:ss Z')}
+    _check:
+      slack>: ${slack.template_path}/${slack.good}
