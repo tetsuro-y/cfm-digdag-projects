@@ -798,7 +798,7 @@ FROM (
             TAT_DB_RESULT_HOURLY_CLICK_TMP
         WHERE
             NRHC_CHANNEL_DETAILID = 1 /* 新着 */
-            AND NRHC_CAMPAIGNID = 3 /* 新着リアルタイム */
+            AND NRHC_CAMPAIGNID = 2 /* 新着リアルタイム */
     ) AS NEW_REALTIME_HOUR_CLICK /*PREFIX = NRHC */
     ON NRHS_HOUR = NRHC_HOUR
     AND NRHS_DEVICETYPEID = NRHC_OSID
