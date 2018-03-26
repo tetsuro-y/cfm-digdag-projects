@@ -8,9 +8,9 @@ BEGIN
 DELETE FROM TAT_DB_RESULT_SITENOTICE
 WHERE
     (
-        RSN_SENDDT >= '${pd_base_date}' :: DATE + INTERVAL '-1DAY'
+        RSN_SENDDT >= '${pd_base_date}':: DATE + INTERVAL '-1DAY'
         OR
-        RSN_SENDDT < DATE_TRUNC('MONTH', '${pd_base_date}' :: DATE + INTERVAL '-25MONTHS')
+        RSN_SENDDT < DATE_TRUNC('MONTH', '${pd_base_date}':: DATE + INTERVAL '-25MONTHS')
     )
 AND RSN_SENDDT IS NOT NULL
 ;
@@ -64,9 +64,9 @@ GROUP BY
 DELETE FROM TAT_DB_RESULT_SITENOTICE
 WHERE
     (
-        RSN_VISITDT >= '${pd_base_date}' :: DATE + INTERVAL '-2DAYS'
+        RSN_VISITDT >= '${pd_base_date}':: DATE + INTERVAL '-2DAYS'
         OR
-        RSN_VISITDT < DATE_TRUNC('MONTH', '${pd_base_date}' :: DATE + INTERVAL '-25MONTHS')
+        RSN_VISITDT < DATE_TRUNC('MONTH', '${pd_base_date}':: DATE + INTERVAL '-25MONTHS')
     )
 AND RSN_SENDDT IS NULL
 ;
@@ -105,7 +105,7 @@ FROM
         FROM
             TAT_DB_HISTORY_VISIT_USER
         WHERE
-            HVU_VISITTIME >= '${pd_base_date}' :: DATE + INTERVAL '-2DAYS'
+            HVU_VISITTIME >= '${pd_base_date}':: DATE + INTERVAL '-2DAYS'
         AND HVU_CHANNELID IN (4, 5)
         GROUP BY
             CAMPAIGNID
