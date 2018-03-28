@@ -380,13 +380,16 @@ FROM (
             TAT_DB_RESULT_TMP_PUSH_SEND_PUSHTYPE
             INNER JOIN (
                 /* TPNNOTICEDELIVERYからCAMPAIGNIDの抽出 */
-                SELECT DISTINCT
+                SELECT
                     TPSP_ITEMID AS CAG_ITEMID
                     ,PNDCAMPAIGNID AS CAG_CAMPAIGNID
                 FROM TAT_DB_RESULT_TMP_PUSH_SEND_PUSHTYPE
                 INNER JOIN TPNNOTICEDELIVERY ON PNDSEQID = TPSP_ITEMID
-                WHERE 
-                TPSP_PUSHTYPECATEGORYID = 1
+                WHERE
+                    TPSP_PUSHTYPECATEGORYID = 1
+                GROUP BY
+                    CAG_ITEMID
+                    ,CAG_CAMPAIGNID
             ) AS CAMPAIGN_GROUP /*PREFIX = CAG */
             ON CAG_ITEMID = TPSP_ITEMID
         WHERE
@@ -824,13 +827,16 @@ FROM (
             TAT_DB_RESULT_HOURLY_SEND_TMP
             INNER JOIN (
                 /* TPNNOTICEDELIVERYからCAMPAIGNIDの抽出 */
-                SELECT DISTINCT
+                SELECT
                     HST_ITEMID AS CAG_ITEMID
                     ,PNDCAMPAIGNID AS CAG_CAMPAIGNID
                 FROM TAT_DB_RESULT_HOURLY_SEND_TMP
                 INNER JOIN TPNNOTICEDELIVERY ON PNDSEQID = HST_ITEMID
                 WHERE
-                  HST_PUSHTYPECATEGORYID = 1 /* パーソナライズ */
+                    HST_PUSHTYPECATEGORYID = 1 /* パーソナライズ */
+                GROUP BY
+                    CAG_ITEMID
+                    ,CAG_CAMPAIGNID
             ) AS CAMPAIGN_GROUP /*PREFIX = CAG */
             ON CAG_ITEMID = HST_ITEMID
         WHERE
