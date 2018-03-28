@@ -35,15 +35,15 @@ FROM (
                 CONTACTDT AS DM_CONTACTDT
                 ,PNDEVICETYPEID AS DM_DEVICETYPEID
                 ,PUSHTYPECATEGORYID AS DM_PUSHTYPECATEGORYID
-                ,ROW_NUMBER() OVER (PARTITION BY MEMBERID, CONTACTDT  ORDER BY PNMODIFYDT DESC) AS DM_ROWNUMBER /* 最新のMODIFYDTのレコードを正とするため */
+                ,ROW_NUMBER() OVER (PARTITION BY MEMBERID, CONTACTDT ORDER BY PNMODIFYDT DESC NULLS LAST) AS DM_ROWNUMBER /* 最新のMODIFYDTのレコードを正とするため */
             FROM
                 TPNPUSHAPPHISTORY
                 INNER JOIN TPUSHNOTIFICATION ON PUSHNOTIFICATIONID = PNPUSHNOTIFICATIONID
             WHERE
-            CONTACTDT >= '${pd_base_date}'::DATE + INTERVAL '-8DAYS'
-            AND CONTACTDT < '${pd_base_date}'::DATE
-            AND PUSHTYPECATEGORYID IN (2, 3, 6)  /* 新着おまとめ、新着リアルタイム、マス */
-            AND MEMBERID IS NOT NULL
+                CONTACTDT >= '${pd_base_date}'::DATE + INTERVAL '-8DAYS'
+                AND CONTACTDT < '${pd_base_date}'::DATE
+                AND PUSHTYPECATEGORYID IN (2, 3, 6)  /* 新着おまとめ、新着リアルタイム、マス */
+                AND MEMBERID IS NOT NULL
         ) AS DEP_MEMBER /* PREFIX=DM */
         WHERE
             DM_ROWNUMBER = 1
@@ -102,15 +102,15 @@ FROM (
                 ,PNDEVICETYPEID AS DM_DEVICETYPEID
                 ,PUSHTYPECATEGORYID AS DM_PUSHTYPECATEGORYID
                 ,ITEMID AS DM_ITEMID
-                ,ROW_NUMBER() OVER (PARTITION BY MEMBERID, CONTACTDT  ORDER BY PNMODIFYDT DESC) AS DM_ROWNUMBER /* 最新のMODIFYDTのレコードを正とするため */
+                ,ROW_NUMBER() OVER (PARTITION BY MEMBERID, CONTACTDT ORDER BY PNMODIFYDT DESC NULLS LAST) AS DM_ROWNUMBER /* 最新のMODIFYDTのレコードを正とするため */
             FROM
                 TPNPUSHAPPHISTORY
                 INNER JOIN TPUSHNOTIFICATION ON PUSHNOTIFICATIONID = PNPUSHNOTIFICATIONID
             WHERE
-            CONTACTDT >= '${pd_base_date}'::DATE + INTERVAL '-8DAYS'
-            AND CONTACTDT < '${pd_base_date}'::DATE
-            AND PUSHTYPECATEGORYID = 1 /* パーソナライズ */
-            AND MEMBERID IS NOT NULL
+                CONTACTDT >= '${pd_base_date}'::DATE + INTERVAL '-8DAYS'
+                AND CONTACTDT < '${pd_base_date}'::DATE
+                AND PUSHTYPECATEGORYID = 1 /* パーソナライズ */
+                AND MEMBERID IS NOT NULL
         ) AS DEP_MEMBER /* PREFIX=DM */
         WHERE
             DM_ROWNUMBER = 1
