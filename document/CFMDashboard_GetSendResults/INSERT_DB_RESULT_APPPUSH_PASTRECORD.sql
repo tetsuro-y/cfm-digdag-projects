@@ -115,7 +115,7 @@ FROM (
         WHERE
             CONTACTDT >= (SELECT TT_STARTDT::DATE FROM TAT_DB_RESULT_PUSH_TMP_TERM)
             AND CONTACTDT < (SELECT TT_ENDDT::DATE FROM TAT_DB_RESULT_PUSH_TMP_TERM)
-            AND PUSHTYPECATEGORYID = 1 /* パーソナライズ */
+            AND PUSHTYPECATEGORYID IN (1, 7) /* パーソナライズ */
             AND MEMBERID IS NOT NULL
     ) AS DEP_MEMBER /* PREFIX=DM */
     WHERE
@@ -141,7 +141,7 @@ FROM (
     WHERE
         CONTACTDT >= (SELECT TT_STARTDT::DATE FROM TAT_DB_RESULT_PUSH_TMP_TERM)
         AND CONTACTDT < (SELECT TT_ENDDT::DATE FROM TAT_DB_RESULT_PUSH_TMP_TERM)
-        AND PUSHTYPECATEGORYID = 1 /* 1:パーソナライズ */
+        AND PUSHTYPECATEGORYID IN (1, 7) /* パーソナライズ */
         AND MEMBERID IS NULL
     GROUP BY 
         MS_SENDDT
@@ -384,10 +384,23 @@ FROM (
             GROUP BY
                 CAG_ITEMID
                 ,CAG_CAMPAIGNID
+                
+           UNION
+
+            /* TPSP_PUSHTYPECATEGORYID=7のデータは、ITEMIDとしてCAMPAIGNIDが格納されている */
+            SELECT
+                TPSP_ITEMID AS CAG_ITEMID
+                ,TPSP_ITEMID AS CAG_CAMPAIGNID
+            FROM TAT_DB_RESULT_TMP_PUSH_SEND_PUSHTYPE
+            WHERE
+                TPSP_PUSHTYPECATEGORYID = 7
+            GROUP BY
+                CAG_ITEMID
+                ,CAG_CAMPAIGNID
         ) AS CAMPAIGN_GROUP /*PREFIX = CAG */
         ON CAG_ITEMID = TPSP_ITEMID
     WHERE
-        TPSP_PUSHTYPECATEGORYID = 1 /* パーソナライズ */
+        TPSP_PUSHTYPECATEGORYID IN (1, 7) /* パーソナライズ */
     GROUP BY
         PSD_SENDDT
         ,PSD_OSID
