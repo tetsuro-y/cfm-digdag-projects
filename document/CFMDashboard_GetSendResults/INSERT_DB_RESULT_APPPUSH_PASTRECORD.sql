@@ -408,7 +408,7 @@ FROM (
         FROM
             TAT_DB_RESULT_TMP_PUSH_SEND_PUSHTYPE
         WHERE
-            TPSP_PUSHTYPECATEGORYID = 7 /* マスパーソナライズ */
+            TPSP_PUSHTYPECATEGORYID = 7 /* セグメント */
     ) AS PERSONALIZE_BASE
     GROUP BY
         PSD_SENDDT
