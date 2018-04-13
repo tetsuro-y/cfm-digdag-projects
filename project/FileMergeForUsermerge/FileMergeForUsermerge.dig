@@ -1,0 +1,49 @@
+timezone: Asia/Tokyo
+
+schedule:
+  minutes_interval>: 5
+
+_export:
+  wf:
+    name: ユーザマージ用ファイルのマージ処理 (FileMergeForUsermerge)
+
+  my_param:
+    - DIGDAGSERVER_HOST
+    - DIGDAGSERVER_ENV
+
+  slack:
+    webhook:  https://hooks.slack.com/services/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
+    channel: '#cfm_team'
+    username: digdag
+    icon_emoji: ghost
+    template_path: notification
+    good: good-template.yml
+    danger: danger-template.yml
+
+  plugin:
+    repositories:
+      - https://jitpack.io
+    dependencies:
+      - com.github.szyn:digdag-slack:0.1.2
+  # Set Reqired params
+  webhook_url: ${slack.webhook}
+  # Set Option params
+  workflow_name: ${wf.name}
+
+_error:
+  slack>: ${slack.template_path}/${slack.danger}
+
++prepare_environments:
+  py>: tasks.PrepareEnviroments.set_parameters
+
++start:
+  echo>: start ${moment(session_time).format('YYYY-MM-DD HH:mm:ss Z')}
+
++s3merge:
+  +execute_shell:
+    sh>: shell/file_merge.sh
+
+  +teardown:
+    echo>: finish ${moment(session_time).format('YYYY-MM-DD HH:mm:ss Z')}
+    _check:
+      slack>: ${slack.template_path}/${slack.good}
