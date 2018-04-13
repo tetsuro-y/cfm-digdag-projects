@@ -1,8 +1,5 @@
 timezone: Asia/Tokyo
 
-schedule:
-  minutes_interval>: 5
-
 _export:
   wf:
     name: ユーザマージ用ファイルのマージ処理 (FileMergeForUsermerge)
