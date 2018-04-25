@@ -9,10 +9,10 @@ DISTRIBUTE ON (OSID, FULLVISITORID);
 
 INSERT INTO TAT_DB_HISTORY_PUSH_USER_TEMP
 SELECT
-	OSID
+    OSID
     ,FULLVISITORID
 FROM
-	EXTERNAL '${embulk.file_path}/${embulk.out_file}'
+    EXTERNAL '${embulk.file_path}/${embulk.out_file}'
 USING (DELIM ',' REMOTESOURCE 'JDBC' LOGDIR '/tmp/embulk/puredata/log');
 
 DELETE FROM TAT_DB_HISTORY_PUSH_USER
@@ -52,7 +52,7 @@ FROM (
                 TPUSHNOTIFICATION
             WHERE
                 PNMEMBERID IS NOT NULL
-				AND PNMODIFYDT < CURRENT_DATE::TIMESTAMP
+                AND PNMODIFYDT < CURRENT_DATE::TIMESTAMP
         ) AS PUSHBASE/*PRFIX = PB*/
         WHERE
             PB_NUMBER = 1--最新のMODIFYDTのレコードを正とする
