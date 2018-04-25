@@ -7,7 +7,7 @@ _export:
     dataset_name: temp
     table_name: CFMDashboard_GetActiveUser_Temp
     destination: gs://stk-bigquery-export/GetActiveUser_*
-    query: queries/BQ/INSERT_DB_HISTORY_PUSH_USER_TEMP
+    query: queries/BQ_ChannelOverview/INSERT_DB_HISTORY_PUSH_USER_TEMP
 
   embulk:
     yml_path: embulk/gcs_fileload_guessed.yml
@@ -20,7 +20,7 @@ _export:
     jar: /var/lib/digdag/puredata/nzExecuteSql-1.0.1.jar
     class: jp.stk.cfm.ExecuteSqls
     properties: /var/lib/digdag/puredata/dbconnection.properties
-    query_dir: queries/DWH
+    query_dir: queries/DWH_ChannelOverview
 
   my_param:
     - DIGDAGSERVER_HOST
