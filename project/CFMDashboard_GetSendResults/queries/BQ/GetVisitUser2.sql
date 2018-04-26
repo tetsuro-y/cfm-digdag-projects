@@ -57,6 +57,7 @@ FROM
             ,DATE AS MNTB_DATE
         FROM
             TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
+            ,TABLE_DATE_RANGE([89629218.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
         WHERE
             TRAFFICSOURCE.MEDIUM = 'mailmag'
             AND TRAFFICSOURCE.SOURCE = 'ni_m'--CHANNELIDとCHANNELDETAILIDではTOWN/USEDの区別がつかないためベタ書き

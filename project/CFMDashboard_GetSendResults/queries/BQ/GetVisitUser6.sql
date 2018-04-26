@@ -28,6 +28,7 @@ FROM
             ,TOTALS.TOTALTRANSACTIONREVENUE AS SNW_REVENUE
         FROM
             TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
+            ,TABLE_DATE_RANGE([89629218.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
         WHERE
             HITS.EVENTINFO.EVENTCATEGORY = 'notice'
             --不審なデータを除外するため
