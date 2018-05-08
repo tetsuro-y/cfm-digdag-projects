@@ -1,33 +1,26 @@
 timezone: Asia/Tokyo
-
 _export:
   wf:
-    name: Digdag Workflow to get visit user & insert send results
+    name: Digdag Workflow to get active user & insert history mailmag and push user
 
   bq:
     dataset_name: temp
-    table_name: CFMDashboard_GetVisitUser_Temp
-    destination: gs://stk-bigquery-export/GetVisitUser_*
-    query: queries/BQ/GetVisitUser
+    table_name: CFMDashboard_GetActiveUser_Temp
+    destination: gs://stk-bigquery-export/GetActiveUser_*
+    query: queries/BQ_ChannelOverview/INSERT_DB_HISTORY_PUSH_USER_TEMP
 
   embulk:
-    file_path: /tmp/embulk/cfmdashboard_getvisituser
-    file_prefix: CFMDashboard_GetVisitUser_Temp_
-    out_file: CFMDashboard_GetVisitUser.csv
+    yml_path: embulk/gcs_fileload_guessed.yml
+    file_path: /tmp/embulk/cfmdashboard_getactiveuser
+    file_prefix: CFMDashboard_GetActiveUser_Temp_
+    out_file: CFMDashboard_GetActiveUser.csv
     key_file_path: /var/lib/digdag/.credential/gcpcredential.json
 
   pure:
     jar: /var/lib/digdag/puredata/nzExecuteSql-1.0.1.jar
     class: jp.stk.cfm.ExecuteSqls
     properties: /var/lib/digdag/puredata/dbconnection.properties
-    file_path_0: queries/DWH/import
-    file_path_1: queries/DWH/personalize
-    file_path_2: queries/DWH/mail_newarrival
-    file_path_3: queries/DWH/mail_mass
-    file_path_4: queries/DWH/mail_transaction
-    file_path_5: queries/DWH/line_mass
-    file_path_6: queries/DWH/push
-    file_path_7: queries/DWH/sitenotice
+    query_dir: queries/DWH_ChannelOverview
 
   my_param:
     - DIGDAGSERVER_HOST
@@ -61,23 +54,13 @@ _error:
 +start:
   echo>: start ${moment(session_time).format('YYYY-MM-DD HH:mm:ss Z')}
 
-+call:
-  call>: CFMDashboard_ChannelOverview.dig
-
 +get_bqdata:
-  _export:
-      ga_start_date: "${ex_bg_start_dt ? ex_bg_start_dt : moment(session_date).subtract(2, 'days').format('YYYY-MM-DD')}"
-      ga_end_date: "${ex_bg_end_dt ? ex_bg_end_dt : moment(session_date).subtract(1, 'days').format('YYYY-MM-DD')}"
-      pd_base_date: "${ex_pd_base_dt ? ex_pd_base_dt : moment(session_date).format('YYYY/MM/DD') }"
-
-  +echo_params:
-    echo>: ga_start_date=${ga_start_date}, ga_end_date=${ga_end_date}, pd_base_date=${pd_base_date}
 
   +pre_delete_gcs_file:
     sh>: gsutil rm -rf ${bq.destination} || echo "no target file at the bucket"
 
   +repeat:
-    loop>: 7
+    loop>: 3
     _do:
       +pre_delete:
         bq_ddl>:
@@ -107,7 +90,7 @@ _error:
       sh>: mkdir -p ${embulk.file_path}
 
     +download_local:
-      embulk>: embulk/gcs_guessed.yml
+      embulk>: ${embulk.yml_path}
 
     +merge_file:
       sh>: cat ${embulk.file_path}/${embulk.file_prefix}* > ${embulk.file_path}/${embulk.out_file} && rm -r ${embulk.file_path}/${embulk.file_prefix}*
@@ -117,35 +100,11 @@ _error:
 
   +insert_puredata:
     +load_sql:
-      sh>: java -cp ${pure.jar} ${pure.class} ${pure.file_path_0} ${pure.properties}
+      sh>: java -cp ${pure.jar} ${pure.class} ${pure.query_dir} ${pure.properties}
 
     +remove_file:
       sh>: rm -rf ${embulk.file_path}
-
-  # 各チャネルのデータマート更新処理
-  +update_datamart:
-    +load_sql_1:
-      sh>: java -cp ${pure.jar} ${pure.class} ${pure.file_path_1} ${pure.properties}
-
-    +load_sql_2:
-      sh>: java -cp ${pure.jar} ${pure.class} ${pure.file_path_2} ${pure.properties}
-
-    +load_sql_3:
-      sh>: java -cp ${pure.jar} ${pure.class} ${pure.file_path_3} ${pure.properties}
-
-    +load_sql_4:
-      sh>: java -cp ${pure.jar} ${pure.class} ${pure.file_path_4} ${pure.properties}
-
-    +load_sql_5:
-      sh>: java -cp ${pure.jar} ${pure.class} ${pure.file_path_5} ${pure.properties}
-
-    +load_sql_6:
-      sh>: java -cp ${pure.jar} ${pure.class} ${pure.file_path_6} ${pure.properties}
-
-    +load_sql_7:
-      sh>: java -cp ${pure.jar} ${pure.class} ${pure.file_path_7} ${pure.properties}
-
   +teardown:
-    echo>: finish ${moment(session_time).format('YYYY-MM-DD HH:mm:ss Z')}
+    echo>: finish ${moment(session_time).utc().format('YYYY-MM-DD HH:mm:ss Z')}
     _check:
       slack>: ${slack.template_path}/${slack.good}

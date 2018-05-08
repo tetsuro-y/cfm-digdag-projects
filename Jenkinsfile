@@ -21,13 +21,13 @@ def getLastCommitMessage = {
 def getGitAuthor = {
     def commit = sh(returnStdout: true, script: 'git rev-parse HEAD')
     msg = sh(returnStdout: true, script: "git --no-pager show -s --format='%an' ${commit}").trim()
-    url = "http://10.201.161.10:8084/CFM/AutoDigdagProject/commit/${commit}"
+    url = "https://github.com/st-tech/cfm-digdag-projects/commit/${commit}"
     return msg + '\n' + url
 }
 
 node {
     stage('Checkout') {
-        git url: env.GITBUCKET_URL + "/CFM/AutoDigdagProject.git", branch: env.BRANCH_NAME
+        git url: "git@github.com:st-tech/cfm-digdag-projects.git", branch: env.BRANCH_NAME
     }
 
     stage('Build') {
