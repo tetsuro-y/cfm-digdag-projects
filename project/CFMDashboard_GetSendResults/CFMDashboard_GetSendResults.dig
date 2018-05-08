@@ -62,6 +62,9 @@ _error:
 +start:
   echo>: start ${moment(session_time).format('YYYY-MM-DD HH:mm:ss Z')}
 
++call:
+  call>: CFMDashboard_ChannelOverview.dig
+
 +get_bqdata:
   _export:
       ga_start_date: "${ex_bg_start_dt ? ex_bg_start_dt : moment(session_date).subtract(2, 'days').format('YYYY-MM-DD')}"

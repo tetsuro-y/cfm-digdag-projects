@@ -22,6 +22,7 @@ SELECT
             OR RTRIM(MMEMAIL) LIKE '%willcom.com'
             OR RTRIM(MMEMAIL) LIKE '%pdx.ne.jp'
             OR RTRIM(MMEMAIL) LIKE '%wcm.ne.jp'
+            OR RTRIM(MMEMAIL) LIKE '%au.com'
             THEN 1 ELSE 0
      END AS TM_MOBILEFLAG
 FROM

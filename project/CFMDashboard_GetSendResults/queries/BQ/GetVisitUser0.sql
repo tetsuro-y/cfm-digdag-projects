@@ -35,6 +35,7 @@ FROM
             ,DATE AS LM_DATE
         FROM
             TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
+            ,TABLE_DATE_RANGE([89629218.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
     ) AS LINE_MASS/*PREFIX = LM*/
     INNER JOIN [durable-binder-547:ZZ_CFM.TAT_DB_MASTER_PARAMETER_MAPPING] AS MAPPING_TABLE ON LM_SOURCE = MPM_PARAMETER
     WHERE
@@ -68,6 +69,7 @@ FROM
             ,DATE AS LPO_DATE
         FROM
             TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
+            ,TABLE_DATE_RANGE([89629218.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
         WHERE
             TRAFFICSOURCE.MEDIUM = 'linepersonal'
             AND LENGTH(TRAFFICSOURCE.CAMPAIGN) <= 12--2.0はOFFERIDがついていないので
@@ -110,6 +112,7 @@ FROM
             ,DATE AS LPN_DATE
         FROM
             TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
+            ,TABLE_DATE_RANGE([89629218.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
         WHERE
             TRAFFICSOURCE.MEDIUM = 'linepersonal'
     ) AS LINE_PERSONALIZE_NEW/*PREFIX = LPN*/
@@ -142,6 +145,7 @@ FROM
             ,DATE AS LT_DATE
         FROM
             TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
+            ,TABLE_DATE_RANGE([89629218.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
     ) AS LINE_TIMELINE/*PREFIX = LT*/
     INNER JOIN [durable-binder-547:ZZ_CFM.TAT_DB_MASTER_PARAMETER_MAPPING] AS MAPPING_TABLE ON LT_SOURCE = MPM_PARAMETER
     WHERE
@@ -172,6 +176,7 @@ FROM
             ,TOTALS.TOTALTRANSACTIONREVENUE AS LR_REVENUE
         FROM
             TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
+            ,TABLE_DATE_RANGE([89629218.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
     ) AS LINE_RICHMENU/*PREFIX = LR*/
     INNER JOIN [durable-binder-547:ZZ_CFM.TAT_DB_MASTER_PARAMETER_MAPPING] AS MAPPING_TABLE ON LR_SOURCE = MPM_PARAMETER
     WHERE

@@ -61,6 +61,7 @@ FROM
                 ,TRAFFICSOURCE.CAMPAIGN AS MMB_CAMPAIGN
             FROM
                 TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
+                ,TABLE_DATE_RANGE([89629218.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
         ) AS MAIL_MASS_BASE/*PREFIX = MMB*/
     ) AS MAIL_MASS/*PREFIX = MM*/
     INNER JOIN [durable-binder-547:ZZ_CFM.TAT_DB_MASTER_PARAMETER_MAPPING] AS MAPPING_TABLE ON MM_SOURCE = MPM_PARAMETER
