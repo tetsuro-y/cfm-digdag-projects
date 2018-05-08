@@ -69,6 +69,7 @@ FROM
                 ,DATE AS PWB_DATE
             FROM
                 TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
+                ,TABLE_DATE_RANGE([89629218.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
             WHERE
                 TRAFFICSOURCE.SOURCE IN ('ios', 'android')
                 AND REGEXP_MATCH(TRAFFICSOURCE.CAMPAIGN, R'PUSH_(M|S|N|P)\d{3}.*')

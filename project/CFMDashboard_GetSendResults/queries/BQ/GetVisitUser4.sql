@@ -50,6 +50,7 @@ FROM
                 ,DATE AS MPOB_DATE
             FROM
                 TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
+                ,TABLE_DATE_RANGE([89629218.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
             WHERE
                 TRAFFICSOURCE.MEDIUM = 'mailpersonal'
         ) AS MAIL_PERSONALIZE_OLD_BASE/*PREFIX = MPOB*/
@@ -99,6 +100,7 @@ FROM
         ,DATE AS MPN_DATE
     FROM
         TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
+        ,TABLE_DATE_RANGE([89629218.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
     WHERE
         TRAFFICSOURCE.MEDIUM = 'mailpersonal'
     ) AS MAIL_PERSONALIZE_NEW/*PREFIX = MPN*/
@@ -132,6 +134,7 @@ FROM
             ,DATE AS MT_DATE
         FROM
             TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
+            ,TABLE_DATE_RANGE([89629218.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
     ) AS MAIL_TRANSACTION/*PREFIX = MT*/
     INNER JOIN [durable-binder-547:ZZ_CFM.TAT_DB_MASTER_PARAMETER_MAPPING] AS MAPPING_TABLE ON MT_SOURCE = MPM_PARAMETER
     WHERE
