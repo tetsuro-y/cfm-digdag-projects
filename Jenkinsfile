@@ -27,7 +27,7 @@ def getGitAuthor = {
 
 node {
     stage('Checkout') {
-        git url: "https://github.com/st-tech/cfm-digdag-projects.git", branch: env.BRANCH_NAME
+        git url: "git@github.com:st-tech/cfm-digdag-projects.git", branch: env.BRANCH_NAME
     }
 
     stage('Build') {
