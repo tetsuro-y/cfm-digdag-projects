@@ -5,7 +5,7 @@ _export:
     name: "日別データマート作成処理 (CreateDatamart) by DigDag"
 
   git:
-    path: http://10.201.161.10:8084/git/CFM/sql-digdag.git
+    path: git@github.com:st-tech/cfm-digdag-sql.git
     dirname: sql-digdag
 
   bq:
