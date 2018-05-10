@@ -62,22 +62,18 @@ FROM (
                 ,COUNT(CASE WHEN MMD.MOBILEFLAG = 0 THEN OPENDT ELSE NULL END) AS CNT_OPEN
             FROM
                 (
-                    ---------------------------------------
-                    --※PARAMETER用カラムが追加され次第修正
-                    ---------------------------------------
                     SELECT
                         ARTICLEID
                         ,MAILMAGCAMPAIGNID
                         ,MOBILEFLAG
                         ,DRAFTID
                         ,DELIVERYDT
-                        ,'gc_m' AS PARAMETER
+                        ,UTMSOURCE
                     FROM
                         TUCMAILMAGDELIVERY
                     WHERE
                         DELIVERYDT >= CAST('${pd_base_date}' AS TIMESTAMP) + INTERVAL '-8DAYS'
                         AND DELIVERYDT < CAST('${pd_base_date}' AS TIMESTAMP)
-                        AND MAILMAGCAMPAIGNID = 1 --GC
                         AND MAILMAGCAMPAIGNID NOT IN(9000, 9010)
                 ) AS MMD
                 INNER JOIN TUCMAILMAGDELIVERYDETAIL AS MMDD ON MMD.ARTICLEID = MMDD.ARTICLEID
@@ -92,11 +88,10 @@ FROM (
                     WHERE
                         MPM_CHANNELID = 1
                         AND MPM_CHANNEL_DETAILID = 2
-                ) AS MPM ON PARAMETER = MPM_PARAMETER
+                ) AS MPM ON UTMSOURCE = MPM_PARAMETER
             WHERE
                 DELIVERYDT >= CAST('${pd_base_date}' AS TIMESTAMP) + INTERVAL '-8DAYS'
                 AND DELIVERYDT < CAST('${pd_base_date}' AS TIMESTAMP)
-                AND MAILMAGCAMPAIGNID = 1 --GC
                 AND MAILMAGCAMPAIGNID NOT IN(9000, 9010)
             GROUP BY
                 SENDDT_SEND
