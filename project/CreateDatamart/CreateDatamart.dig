@@ -12,19 +12,19 @@ _export:
     dataset_name: temp
     table_name: CreateDatamartTemp
     destination: gs://stk-bigquery-export/CreateDatamartTemp_*
-#    query: sql-digdag/example/BQ
-    query: sql-digdag/sql/BQ
+#    query: cfm-digdag-sql/example/BQ
+    query: cfm-digdag-sql/sql/BQ
 
   pure:
     jar: /var/lib/digdag/puredata/nzExecuteSql-1.0.2.jar
     class: jp.stk.cfm.ExecuteSqls
     properties: /var/lib/digdag/puredata/dbconnection.properties
-#    query: sql-digdag/example/DWH
-    query: sql-digdag/sql/DWH
+#    query: cfm-digdag-sql/example/DWH
+    query: cfm-digdag-sql/sql/DWH
     log_dir: /tmp/embulk/puredata/log/CreateDatamart
 
   batch:
-    query: sql-digdag/sql/BATCH/1m1b
+    query: cfm-digdag-sql/sql/BATCH/1m1b
     path: /tmp/CreateDatamart
     mb_file: ${moment(session_time).format("YYYYMMDD")}-1m1b.tsv
 
