@@ -6,7 +6,7 @@ _export:
 
   git:
     path: git@github.com:st-tech/cfm-digdag-sql.git
-    dirname: sql-digdag
+    dirname: cfm-digdag-sql
 
   bq:
     dataset_name: temp
