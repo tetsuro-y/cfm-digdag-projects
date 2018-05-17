@@ -1,10 +1,18 @@
 BEGIN
 ;
 
---過去8日分のデータを削除(洗い替える)
-DELETE FROM TAT_DB_RESULT_MASSMAIL
-WHERE RMM_SENDDT >= '${pd_base_date}'::DATE + INTERVAL '-8DAYS' OR RMM_SENDDT < DATE_TRUNC('MONTH','${pd_base_date}'::DATE + INTERVAL '-25MONTHS')
+CREATE TEMP TABLE TAT_DB_RESULT_MASSMAIL_TMP_TERM AS
+SELECT
+    DATE_TRUNC('MONTH', CURRENT_DATE) + INTERVAL '-25MONTHS' AS TT_STARTDT
+    ,CURRENT_DATE AS TT_ENDDT
 ;
+
+DELETE FROM TAT_DB_RESULT_MASSMAIL
+WHERE
+    RMM_SENDDT >= (SELECT TT_STARTDT FROM TAT_DB_RESULT_MASSMAIL_TMP_TERM)
+    AND RMM_SENDDT < (SELECT TT_ENDDT FROM TAT_DB_RESULT_MASSMAIL_TMP_TERM)
+;
+
 -------------------------------
 --マスメールの集計結果をINSERT
 -------------------------------
@@ -68,12 +76,12 @@ FROM (
                         ,MOBILEFLAG
                         ,DRAFTID
                         ,DELIVERYDT
-                        ,UTMSOURCE
+                        ,UTMSOURCE AS PARAMETER
                     FROM
                         TUCMAILMAGDELIVERY
                     WHERE
-                        DELIVERYDT >= CAST('${pd_base_date}' AS TIMESTAMP) + INTERVAL '-8DAYS'
-                        AND DELIVERYDT < CAST('${pd_base_date}' AS TIMESTAMP)
+                        DELIVERYDT >= (SELECT TT_STARTDT FROM TAT_DB_RESULT_MASSMAIL_TMP_TERM)
+                        AND DELIVERYDT < (SELECT TT_ENDDT FROM TAT_DB_RESULT_MASSMAIL_TMP_TERM)
                         AND MAILMAGCAMPAIGNID NOT IN(9000, 9010)
                 ) AS MMD
                 INNER JOIN TUCMAILMAGDELIVERYDETAIL AS MMDD ON MMD.ARTICLEID = MMDD.ARTICLEID
@@ -88,10 +96,10 @@ FROM (
                     WHERE
                         MPM_CHANNELID = 1
                         AND MPM_CHANNEL_DETAILID = 2
-                ) AS MPM ON UTMSOURCE = MPM_PARAMETER
+                ) AS MPM ON PARAMETER = MPM_PARAMETER
             WHERE
-                DELIVERYDT >= CAST('${pd_base_date}' AS TIMESTAMP) + INTERVAL '-8DAYS'
-                AND DELIVERYDT < CAST('${pd_base_date}' AS TIMESTAMP)
+                DELIVERYDT >= (SELECT TT_STARTDT FROM TAT_DB_RESULT_MASSMAIL_TMP_TERM)
+                AND DELIVERYDT < (SELECT TT_ENDDT FROM TAT_DB_RESULT_MASSMAIL_TMP_TERM)
                 AND MAILMAGCAMPAIGNID NOT IN(9000, 9010)
             GROUP BY
                 SENDDT_SEND
@@ -113,8 +121,8 @@ FROM (
             FROM
                 TAT_DB_HISTORY_VISIT_USER
             WHERE
-                HVU_SENDDT >= CAST('${pd_base_date}' AS TIMESTAMP) + INTERVAL '-8DAYS'
-                AND HVU_SENDDT < CAST('${pd_base_date}' AS TIMESTAMP)
+                HVU_SENDDT >= (SELECT TT_STARTDT FROM TAT_DB_RESULT_MASSMAIL_TMP_TERM)
+                AND HVU_SENDDT < (SELECT TT_ENDDT FROM TAT_DB_RESULT_MASSMAIL_TMP_TERM)
                 AND HVU_CHANNELID = 1
                 AND HVU_CHANNEL_DETAILID = 2
             GROUP BY
