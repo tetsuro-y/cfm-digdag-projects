@@ -1,0 +1,14 @@
+in:
+  type: gcs
+  bucket: stk-bigquery-export
+  path_prefix: usermerge-20170928_
+  auth_method: json_key
+  json_keyfile: /Users/kenichiro.saito/git/zozo-037ae66454cb.json
+  decoders:
+  - {type: gzip}
+  parser:
+    charset: UTF-8
+    newline: CRLF
+    type: csv
+    delimiter: ','
+out: {type: stdout}
