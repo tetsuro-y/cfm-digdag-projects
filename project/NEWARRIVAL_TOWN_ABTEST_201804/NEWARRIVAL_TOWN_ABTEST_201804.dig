@@ -1,8 +1,5 @@
 timezone: Asia/Tokyo
 
-#schedule:
-#  daily>: 09:00:00
-
 _export:
   wf:
     name: Sample Digdag Workflow for NewArrival Town ABTest
