@@ -28,16 +28,22 @@ FROM
 USING (DELIM ',' REMOTESOURCE 'JDBC' LOGDIR '/tmp/embulk/puredata/log')
 ;
 
-DELETE FROM TBQ_MEASUREMENT_SCANNING_ERROR_UID_TEMP
-WHERE
-    SENDDT BETWEEN "2018-04-27 00:00:00"
-        AND (
-            SELECT
-                MAX(VISITSTARTDT)
-            FROM
-                TBQ_MEASUREMENT_SCANNING_ERROR_UID
-            )
-;
+--運用時使用クエリ
+-- DELETE FROM TBQ_MEASUREMENT_SCANNING_ERROR_UID
+-- WHERE
+--     SENDDT BETWEEN (
+--                 SELECT
+--                     MIN(VISITSTARTDT)
+--                 FROM
+--                     TBQ_MEASUREMENT_SCANNING_ERROR_UID
+--                 )
+--             AND (
+--                 SELECT
+--                     MAX(VISITSTARTDT)
+--                 FROM
+--                     TBQ_MEASUREMENT_SCANNING_ERROR_UID
+--                 )
+-- ;
 
 INSERT INTO TBQ_MEASUREMENT_SCANNING_ERROR_UID
 SELECT
