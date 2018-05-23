@@ -35,13 +35,13 @@ USING (DELIM ',' REMOTESOURCE 'JDBC' LOGDIR '/tmp/embulk/puredata/log')
 --                 SELECT
 --                     MIN(VISITSTARTDT)
 --                 FROM
---                     TBQ_MEASUREMENT_SCANNING_ERROR_UID
+--                     TBQ_MEASUREMENT_SCANNING_ERROR_UID_TEMP
 --                 )
 --             AND (
 --                 SELECT
 --                     MAX(VISITSTARTDT)
 --                 FROM
---                     TBQ_MEASUREMENT_SCANNING_ERROR_UID
+--                     TBQ_MEASUREMENT_SCANNING_ERROR_UID_TEMP
 --                 )
 -- ;
 
