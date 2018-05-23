@@ -23,25 +23,25 @@ FROM
             customDimensions.index
         FROM
 --過去分全量取得
-            table_date_range([90402834.ga_sessions_], timestamp('2018-4-27'),
-                                timestamp(current_date()))
-            , table_date_range([90303901.ga_sessions_], timestamp('2018-4-27'),
-                            timestamp(current_date()))
---             table_date_range([90402834.ga_sessions_], DATE_ADD(CURRENT_TIMESTAMP(), -2, 'DAY'),
+--             table_date_range([90402834.ga_sessions_], timestamp('2018-4-27'),
 --                                 timestamp(current_date()))
---             , table_date_range([90303901.ga_sessions_], DATE_ADD(CURRENT_TIMESTAMP(), -2, 'DAY'),
+--             , table_date_range([90303901.ga_sessions_], timestamp('2018-4-27'),
 --                             timestamp(current_date()))
+            table_date_range([90402834.ga_sessions_], DATE_ADD(CURRENT_TIMESTAMP(), -2, 'DAY'),
+                                timestamp(current_date()))
+            , table_date_range([90303901.ga_sessions_], DATE_ADD(CURRENT_TIMESTAMP(), -2, 'DAY'),
+                            timestamp(current_date()))
     ), customDimensions)
 WHERE
  REGEXP_MATCH(hits.eventInfo.eventCategory, r'^measurement_scanning_error') IS TRUE 
     AND customDimensions.index = 2
 GROUP EACH BY
-    visitStartTime,
+    VISITSTARTDT,
     fullVisitorId,
     uid,
     visitId,
-    hits.appInfo.version,
-    device.mobileDeviceModel,
-    device.operatingSystem,
-    device.operatingSystemVersion
+    HITS_APPINFO_VERSION,
+    DEVICE_MOBILEDEVICEMODEL,
+    DEVICE_OS,
+    DEVICE_OSVERSION
 ;

@@ -18,10 +18,14 @@ in:
     allow_extra_columns: false
     allow_optional_columns: false
     columns:
-    - {name: SENDDT, type: string}
-    - {name: SENDEMAILID, type: long}
-    - {name: TOPICSFLAG, type: long}
-    - {name: REVENUE, type: long}
+    - {name: VISITSTARTDT, type: timestamp, format: '%Y-%m-%d %H:%M:%S'}
+    - {name: fullVisitorId, type: string}
+    - {name: uid, type: string}
+    - {name: visitId, type: string}
+    - {name: HITS_APPINFO_VERSION, type: string}
+    - {name: DEVICE_MOBILEDEVICEMODEL, type: string}
+    - {name: DEVICE_OS, type: string}
+    - {name: DEVICE_OSVERSION, type: string}
 filters:
   - type: timestamp_format
     default_from_timestamp_format: ["%Y-%m-%d %H:%M:%S.%N"]
