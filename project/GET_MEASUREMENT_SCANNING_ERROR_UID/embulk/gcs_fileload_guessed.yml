@@ -28,7 +28,7 @@ filters:
     default_to_timezone: "Asia/Tokyo"
     default_to_timestamp_format: "%Y-%m-%d %H:%M:%S"
     columns:
-      - {name: ACCESSDT, type: string}
+      - {name: VISITSTARTDT, type: string}
 out:
   type: file
   path_prefix: ${embulk.file_path}/${embulk.file_prefix}
