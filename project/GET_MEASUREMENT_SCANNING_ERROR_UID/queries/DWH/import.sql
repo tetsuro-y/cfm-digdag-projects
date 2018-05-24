@@ -31,7 +31,7 @@ USING (DELIM ',' REMOTESOURCE 'JDBC' LOGDIR '/tmp/embulk/puredata/log')
 --運用時使用クエリ
 DELETE FROM TBQ_MEASUREMENT_SCANNING_ERROR_UID
 WHERE
-    SENDDT BETWEEN (
+    VISITSTARTDT BETWEEN (
                 SELECT
                     MIN(VISITSTARTDT)
                 FROM

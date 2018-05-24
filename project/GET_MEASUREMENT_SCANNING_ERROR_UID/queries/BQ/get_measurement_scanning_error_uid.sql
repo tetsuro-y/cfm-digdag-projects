@@ -11,7 +11,7 @@ SELECT
 FROM
     flatten((
         SELECT
-            STRFTIME_UTC_USEC(visitStartTime * 1000000 + 32400000000, "%Y-%m-%d %H:%M:%S") AS visitStartTime,
+            STRFTIME_UTC_USEC(visitStartTime * 1000000, "%Y-%m-%d %H:%M:%S") AS visitStartTime,
             fullVisitorId,
             customDimensions.value as uid,
             visitId,
