@@ -1,5 +1,8 @@
 timezone: Asia/Tokyo
 
+schedule:
+  daily>: 11:00:00
+
 _export:
   wf:
     name: Digdag Workflow for Get MeasurementScanningError UID
