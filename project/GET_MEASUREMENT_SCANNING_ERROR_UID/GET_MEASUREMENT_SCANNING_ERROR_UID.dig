@@ -31,8 +31,8 @@ _export:
     - DIGDAGSERVER_ENV
 
   slack:
-    webhook: https://hooks.slack.com/services/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
-    channel: '#cfm_science_team'
+    webhook: https://hooks.slack.com/services/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
+    channel: '#cfm_system_alert'
     username: digdag
     icon_emoji: ghost
     template_path: notification
