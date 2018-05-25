@@ -1,0 +1,113 @@
+timezone: Asia/Tokyo
+
+schedule:
+  daily>: 11:00:00
+
+_export:
+  wf:
+    name: Digdag Workflow for Get MeasurementScanningError UID
+
+  bq:
+    dataset_name: temp
+    table_name: tmeasurement_scanning_error_uid_temp
+    destination: gs://stk-bigquery-export/measurement_scanning_error_uid_*.csv.gz
+    query: queries/BQ/get_measurement_scanning_error_uid.sql
+
+  embulk:
+    yml_path: embulk/gcs_fileload_guessed.yml
+    file_path: /tmp/embulk/measurement_scanning_error_uid
+    file_prefix: measurement_scanning_error_uid_
+    out_file: loadfile_measurement_scanning_error_uid.csv
+    key_file_path: /var/lib/digdag/.credential/gcpcredential.json
+
+  pure:
+    jar: /var/lib/digdag/puredata/nzExecuteSql-1.0.1.jar
+    class: jp.stk.cfm.ExecuteSqls
+    properties: /var/lib/digdag/puredata/dbconnection.properties
+    query_dir: queries/DWH
+
+  my_param:
+    - DIGDAGSERVER_HOST
+    - DIGDAGSERVER_ENV
+
+  slack:
+    webhook: https://hooks.slack.com/services/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
+    channel: '#cfm_system_alert'
+    username: digdag
+    icon_emoji: ghost
+    template_path: notification
+    good: good-template.yml
+    danger: danger-template.yml
+
+  plugin:
+    repositories:
+      - https://jitpack.io
+    dependencies:
+      - com.github.szyn:digdag-slack:0.1.2
+  # Set Reqired params
+  webhook_url: ${slack.webhook}
+  # Set Option params
+  workflow_name: ${wf.name}
+
++prepare_environments:
+  py>: tasks.PrepareEnviroments.set_parameters
+
+_error:
+  slack>: ${slack.template_path}/${slack.danger}
+
++start:
+  echo>: start ${moment(session_time).utc().format('YYYY-MM-DD HH:mm:ss Z')}
+
++create_table:
+  +pre_delete_gcs_file:
+    sh>: gsutil rm -rf ${bq.destination} || echo "no target file at the bucket"
+
+  +pre_delete:
+    bq_ddl>:
+    delete_tables:
+      - ${bq.dataset_name}.${bq.table_name}
+
+  +create_select:
+    bq>: ${bq.query}
+    use_legacy_sql: true
+    allow_large_results: True
+    dataset: ${bq.dataset_name}
+    destination_table: ${bq.table_name}
+
++extract_gcs:
+  +extract_file:
+    bq_extract>: ${bq.dataset_name}.${bq.table_name}
+    destination: ${bq.destination}
+    compression: GZIP
+    destination_format: CSV
+
+  +post_delete:
+    bq_ddl>:
+    delete_tables:
+      - ${bq.dataset_name}.${bq.table_name}
+
++download_file:
+  +prepare_dir:
+    sh>: mkdir -p ${embulk.file_path}
+
+  +download_local:
+    embulk>: ${embulk.yml_path}
+
+  +merge_file:
+    sh>: cat ${embulk.file_path}/${embulk.file_prefix}* > ${embulk.file_path}/${embulk.out_file} && rm -r ${embulk.file_path}/${embulk.file_prefix}*
+
+  +post_delete_gcs_file:
+    sh>: gsutil rm -rf ${bq.destination} || echo "no target file at the bucket"
+
++insert_puredata:
+  +load_sql:
+    sh>: java -cp ${pure.jar} ${pure.class} ${pure.query_dir} ${pure.properties}
+
+  +remove_file:
+    sh>: rm -rf ${embulk.file_path}
+
++teardown:
+  echo>: finish ${moment(session_time).utc().format('YYYY-MM-DD HH:mm:ss Z')}
+  _check:
+    slack>: ${slack.template_path}/${slack.good}
+
