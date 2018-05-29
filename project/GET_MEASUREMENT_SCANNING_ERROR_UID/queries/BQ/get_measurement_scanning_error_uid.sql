@@ -1,4 +1,4 @@
---SUIT計測エラー（measurement_scanning_error）UID取得※visitStartDate、uid、visitIdごとに一意
+--SUIT計測エラー（measurement_camerapositioning_errorまたはmeasurement_scanning_error）UID取得※visitStartDate、uid、visitIdごとに一意
 SELECT
     visitStartTime as VISITSTARTDT,
     fullVisitorId,
@@ -33,7 +33,11 @@ FROM
                             timestamp(current_date()))
     ), customDimensions)
 WHERE
- REGEXP_MATCH(hits.eventInfo.eventCategory, r'^measurement_scanning_error') IS TRUE 
+    (
+      REGEXP_MATCH(hits.eventInfo.eventCategory, r'^measurement_camerapositioning_error') IS TRUE
+      OR
+      REGEXP_MATCH(hits.eventInfo.eventCategory, r'^measurement_scanning_error') IS TRUE
+    )
     AND customDimensions.index = 2
 GROUP EACH BY
     VISITSTARTDT,
