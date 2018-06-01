@@ -1,0 +1,44 @@
+in:
+  type: gcs
+  bucket: stk-bigquery-export
+  path_prefix: tat_site_accessdata_landingpage_
+  auth_method: json_key
+  json_keyfile: ${embulk.key_file_path}
+  decoders:
+  - {type: gzip}
+  parser:
+    charset: UTF-8
+    newline: CRLF
+    type: csv
+    delimiter: ','
+    quote: '"'
+    escape: '"'
+    trim_if_not_quoted: false
+    skip_header_lines: 1
+    allow_extra_columns: false
+    allow_optional_columns: false
+    columns:
+    - {name: SAL_MONTH, type: timestamp, format: '%Y/%m/%d'}
+    - {name: SAL_DEVICEID, type: long}
+    - {name: SAL_PAGECATEGORYID, type: long}
+    - {name: SAL_SOURCEID, type: long}
+    - {name: SAL_CNT_USER, type: long}
+    - {name: SAL_BOUNCERATE, type: double}
+filters:
+  - type: timestamp_format
+    default_from_timestamp_format: ["%Y-%m-%d"]
+    default_to_timestamp_format: "%Y-%m-%d"
+    columns:
+      - {name: SAL_MONTH, type: string}
+out:
+  type: file
+  path_prefix: ${embulk.file_path}/${embulk.file_prefix}
+  file_ext: csv
+  formatter:
+    type: csv
+    charset: UTF-8
+    delimiter: ','
+    newline: CRLF
+    quote: '"'
+    escape: '"'
+    header_line: false
