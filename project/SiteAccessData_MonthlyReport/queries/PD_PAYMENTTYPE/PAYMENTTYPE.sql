@@ -1,0 +1,115 @@
+BEGIN
+;
+
+DELETE
+FROM
+    TAT_SITE_PAYMENTTYPE
+WHERE
+    SAPA_MONTH < DATE_TRUNC('MONTH', CURRENT_DATE + INTERVAL '-2YEARS')::TIMESTAMP
+    OR SAPA_MONTH >= DATE_TRUNC('MONTH', CURRENT_DATE + INTERVAL '-1MONTH')::TIMESTAMP
+;
+
+INSERT INTO TAT_SITE_PAYMENTTYPE
+/*会員タイプ（会員・ゲスト）別支払い方法
+・分類
+代引・クレジット・Amazon Pay・ツケ払い・それ以外*/
+
+SELECT
+    DATE_TRUNC('MONTH', ORORDERDT) AS SAPA_MONTH
+    ,CASE
+        WHEN OISITEID = 1
+                    AND OIUID NOT LIKE 'S6%'
+                    AND OIUID NOT LIKE 'S9%'
+            THEN 1--PC
+        WHEN OISITEID IN (2, 3, 4)
+                    AND OIUID NOT LIKE 'S6%'
+                    AND OIUID NOT LIKE 'S9%'
+            THEN 2--SP
+        WHEN (OIUID LIKE 'S6%' OR OIUID LIKE 'S9%')
+            THEN 3--APP
+    END AS SAPA_DEVICEID
+    ,CASE
+        WHEN ORMEMBERID <> 4388014 THEN 1
+        WHEN ORMEMBERID = 4388014 THEN 2
+        ELSE NULL
+    END AS SAPA_MEMBERTYPEID
+    ,CASE
+        WHEN ORPAYMENTTYPEID = 2 THEN 1--代引
+        WHEN ORPAYMENTTYPEID = 1 THEN 2--クレジット
+        WHEN ORPAYMENTTYPEID = 12 THEN 3--Amazon Pay
+        WHEN ORPAYMENTTYPEID = 11 THEN 4--ツケ払い
+        ELSE 5
+    END AS SAPA_PAYMENTID
+    ,COUNT(DISTINCT ORORDERID) AS SAPA_CNT_ORDER
+FROM (
+    --ゲスト以外
+    SELECT DISTINCT
+        ORORDERDT
+        ,ORORDERID
+        ,ORMEMBERID
+        ,ORPAYMENTTYPEID
+        ,OISITEID
+        ,OIUID
+    FROM
+        TORDER
+        INNER JOIN TORDERDETAIL ON ORORDERID = ODORDERID
+        INNER JOIN TORDERINFO ON ORORDERID =  OIORDERID
+    WHERE        
+        ORORDERDT >= DATE_TRUNC('MONTH', CURRENT_DATE) + INTERVAL'-1MONTH'
+        AND ORORDERDT < DATE_TRUNC('MONTH', CURRENT_DATE)
+        AND ORMALLID = 1
+        AND ORORDERID = ORORIGINALORDERID --発送後キャンセルを考慮しない。上記ORORDERSTATUSの-1除外だけでは発送後キャンセルが含まれるためこの指定が必要
+        AND ORPAYMENTTYPEID <> 13 --定期便の注文を除外
+        --タイツ0円購入を除外
+        AND NOT EXISTS (
+            SELECT
+                *
+            FROM
+                TORDERDETAILDISCOUNT--TORDERDETAILDISCOUNTのDISCOUNTTYPEIDでタイツ0円購入を指定できる・ORDISCOUNTだとのちのちお気に入り割引など入ってくるのでこっちが確実
+            WHERE
+                ODORDERDETAILID = ODDORDERDETAILID
+                AND ODDDISCOUNTTYPEID = 2 --1:お気に入り値引き/2:初回タイツ無料/22022:シングル（靴擦れ可）/22023:ダブル（靴擦れ可）/22024:シングル（靴擦れ不可）/22026:ダブル（靴擦れ不可）/22028:タタキ（靴擦れ不可）/22029:裾上げ未指定
+        )
+        AND ORMEMBERID <> 4388014
+
+    UNION ALL
+
+    --ゲスト
+    SELECT DISTINCT
+        ORORDERDT
+        ,ORORDERID
+        ,ORMEMBERID
+        ,ORPAYMENTTYPEID
+        ,OOTSITEID AS OISITEID
+        ,OOTUID AS OIUID
+    FROM
+        TORDER
+        INNER JOIN TORDERDETAIL ON ORORDERID = ODORDERID
+        INNER JOIN TORDERONETIMEINFO ON ORORDERID = OOTORDERID
+    WHERE
+        ORORDERDT >= DATE_TRUNC('MONTH', CURRENT_DATE) + INTERVAL'-1MONTH'
+        AND ORORDERDT < DATE_TRUNC('MONTH', CURRENT_DATE)
+        AND ORMALLID = 1
+        AND ORORDERID = ORORIGINALORDERID --発送後キャンセルを考慮しない。上記ORORDERSTATUSの-1除外だけでは発送後キャンセルが含まれるためこの指定が必要
+        AND ORPAYMENTTYPEID <> 13 --定期便の注文を除外
+        --タイツ0円購入を除外
+        AND NOT EXISTS (
+            SELECT
+                *
+            FROM
+                TORDERDETAILDISCOUNT--TORDERDETAILDISCOUNTのDISCOUNTTYPEIDでタイツ0円購入を指定できる・ORDISCOUNTだとのちのちお気に入り割引など入ってくるのでこっちが確実
+            WHERE
+                ODORDERDETAILID = ODDORDERDETAILID
+                AND ODDDISCOUNTTYPEID = 2 --1:お気に入り値引き/2:初回タイツ無料/22022:シングル（靴擦れ可）/22023:ダブル（靴擦れ可）/22024:シングル（靴擦れ不可）/22026:ダブル（靴擦れ不可）/22028:タタキ（靴擦れ不可）/22029:裾上げ未指定
+        )
+        AND ORMEMBERID = 4388014
+) AS OD
+GROUP BY
+    SAPA_MONTH
+    ,SAPA_DEVICEID
+    ,SAPA_MEMBERTYPEID
+    ,SAPA_PAYMENTID
+;
+
+COMMIT
+;

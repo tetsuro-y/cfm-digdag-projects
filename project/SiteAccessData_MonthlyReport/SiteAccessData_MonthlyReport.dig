@@ -1,0 +1,63 @@
+timezone: Asia/Tokyo
+
+schedule:
+  monthly>: 1,10:00:00 # 毎月1日のAM10時に実行
+
+_export:
+  wf:
+    name: Digdag Workflow to Create Site Monthly Report
+
+  my_param:
+    - DIGDAGSERVER_HOST
+    - DIGDAGSERVER_ENV
+
+  slack:
+    webhook: https://hooks.slack.com/services/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
+    channel: '#zozo-anablock'
+    username: digdag
+    icon_emoji: ghost
+    template_path: notification
+    good: good-template.yml
+    danger: danger-template.yml
+
+  plugin:
+    repositories:
+      - https://jitpack.io
+    dependencies:
+      - com.github.szyn:digdag-slack:0.1.2
+  # Set Reqired params
+  webhook_url: ${slack.webhook}
+  # Set Option params
+  workflow_name: ${wf.name}
+
++prepare_environments:
+  py>: tasks.PrepareEnviroments.set_parameters
+
+_error:
+  slack>: ${slack.template_path}/${slack.danger}
+
++start:
+  echo>: start ${moment(session_time).utc().format('YYYY-MM-DD HH:mm:ss Z')}
+
+# 各データマート更新用のワークフローを呼び出す
++call_1:
+  call>: SiteAccessData_MonthlyReport_Accessdata_Page.dig
+
++call_2:
+  call>: SiteAccessData_MonthlyReport_Accessdata_LandingPage.dig
+
++call_3:
+  call>: SiteAccessData_MonthlyReport_Ranking.dig
+
++call_4:
+  call>: SiteAccessData_MonthlyReport_Accessdata_Pricetype.dig
+
++call_5:
+  call>: SiteAccessData_MonthlyReport_UserAttribute.dig
+
++call_6:
+  call>: SiteAccessData_MonthlyReport_Paymenttype.dig
+
++teardown:
+  echo>: finish ${moment(session_time).utc().format('YYYY-MM-DD HH:mm:ss Z')}
+
