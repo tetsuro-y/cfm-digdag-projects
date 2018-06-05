@@ -1,7 +1,7 @@
 timezone: Asia/Tokyo
 
-schedule:
-  monthly>: 1,10:00:00 # 毎月1日のAM10時に実行
+#schedule:
+#  monthly>: 1,10:00:00 # 毎月1日のAM10時に実行
 
 _export:
   wf:
