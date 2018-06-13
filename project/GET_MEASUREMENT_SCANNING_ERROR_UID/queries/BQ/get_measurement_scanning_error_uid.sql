@@ -7,6 +7,7 @@ SELECT
     hits.eventInfo.eventCategory as EVENTCATEGORY,
     hits.appInfo.version as HITS_APPINFO_VERSION,
     device.mobileDeviceMarketingName as DEVICE_MARKETINGNAME,
+    device.mobileDeviceInfo as DEVICE_INFO,
     device.mobileDeviceModel as DEVICE_MOBILEDEVICEMODEL,
     device.operatingSystem as DEVICE_OS,
     device.operatingSystemVersion as DEVICE_OSVERSION
@@ -19,6 +20,7 @@ FROM
             visitId,
             hits.eventInfo.eventCategory,
             hits.appInfo.version,
+            device.mobileDeviceInfo,
             device.mobileDeviceMarketingName,
             device.mobileDeviceModel,
             device.operatingSystem,
@@ -46,6 +48,7 @@ GROUP EACH BY
     EVENTCATEGORY,
     HITS_APPINFO_VERSION,
     DEVICE_MARKETINGNAME,
+    DEVICE_INFO,
     DEVICE_MOBILEDEVICEMODEL,
     DEVICE_OS,
     DEVICE_OSVERSION

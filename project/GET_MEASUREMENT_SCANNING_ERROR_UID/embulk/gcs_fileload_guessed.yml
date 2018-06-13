@@ -25,6 +25,7 @@ in:
     - {name: EVENTCATEGORY, type: string}
     - {name: HITS_APPINFO_VERSION, type: string}
     - {name: DEVICE_MARKETINGNAME, type: string}
+    - {name: DEVICE_INFO, type: string}
     - {name: DEVICE_MOBILEDEVICEMODEL, type: string}
     - {name: DEVICE_OS, type: string}
     - {name: DEVICE_OSVERSION, type: string}
