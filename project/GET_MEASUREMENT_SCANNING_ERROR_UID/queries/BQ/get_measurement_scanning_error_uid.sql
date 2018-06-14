@@ -1,10 +1,13 @@
---SUIT計測エラー（measurement_camerapositioning_errorまたはmeasurement_scanning_error）UID取得※visitStartDate、uid、visitIdごとに一意
+--SUIT計測エラー（measurementのスクリーンかつイベントカテゴリにerrorの文字列が含まれるアクセス）UID取得
 SELECT
     visitStartTime as VISITSTARTDT,
     fullVisitorId,
     uid,
     visitId,
+    hits.eventInfo.eventCategory as EVENTCATEGORY,
     hits.appInfo.version as HITS_APPINFO_VERSION,
+    device.mobileDeviceMarketingName as DEVICE_MARKETINGNAME,
+    device.mobileDeviceInfo as DEVICE_INFO,
     device.mobileDeviceModel as DEVICE_MOBILEDEVICEMODEL,
     device.operatingSystem as DEVICE_OS,
     device.operatingSystemVersion as DEVICE_OSVERSION
@@ -17,6 +20,8 @@ FROM
             visitId,
             hits.eventInfo.eventCategory,
             hits.appInfo.version,
+            device.mobileDeviceInfo,
+            device.mobileDeviceMarketingName,
             device.mobileDeviceModel,
             device.operatingSystem,
             device.operatingSystemVersion,
@@ -33,18 +38,17 @@ FROM
                             timestamp(current_date()))
     ), customDimensions)
 WHERE
-    (
-      REGEXP_MATCH(hits.eventInfo.eventCategory, r'^measurement_camerapositioning_error') IS TRUE
-      OR
-      REGEXP_MATCH(hits.eventInfo.eventCategory, r'^measurement_scanning_error') IS TRUE
-    )
+    REGEXP_MATCH(hits.eventInfo.eventCategory, r'^measurement_.*error.*') IS TRUE
     AND customDimensions.index = 2
 GROUP EACH BY
     VISITSTARTDT,
     fullVisitorId,
     uid,
     visitId,
+    EVENTCATEGORY,
     HITS_APPINFO_VERSION,
+    DEVICE_MARKETINGNAME,
+    DEVICE_INFO,
     DEVICE_MOBILEDEVICEMODEL,
     DEVICE_OS,
     DEVICE_OSVERSION
