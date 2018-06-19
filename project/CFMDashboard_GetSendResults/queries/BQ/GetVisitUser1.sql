@@ -63,7 +63,6 @@ FROM
                 ,MMB_FULLVISITORID AS MM_FULLVISITORID
                 ,MMB_VISITID AS MM_VISITID
                 ,MMB_REVENUE AS MM_REVENUE
-                ,MMB_DATE AS MM_DATE
                 ,MMB_CAMPAIGN AS MM_CAMPAIGN
             FROM (
                 SELECT
@@ -74,7 +73,6 @@ FROM
                     ,RIGHT(TRAFFICSOURCE.CAMPAIGN, 8) AS MMB_EMAILID
                     ,FULLVISITORID AS MMB_FULLVISITORID
                     ,TOTALS.TOTALTRANSACTIONREVENUE AS MMB_REVENUE
-                    ,DATE AS MMB_DATE
                     ,TRAFFICSOURCE.CAMPAIGN AS MMB_CAMPAIGN
                     ,VISITID AS MMB_VISITID
                 FROM

@@ -52,7 +52,6 @@ FROM
                 ,MPOB_FULLVISITORID AS MPO_FULLVISITORID
                 ,MPOB_VISITID AS MPO_VISITID
                 ,MPOB_REVENUE AS MPO_REVENUE
-                ,MPOB_DATE AS MPO_DATE
             FROM (
                 SELECT
                     FORMAT_UTC_USEC(VISITSTARTTIME * 1000000 + 32400000000) AS MPOB_VISITTIME
@@ -61,7 +60,6 @@ FROM
                     ,NTH(5, SPLIT(UPPER(TRAFFICSOURCE.SOURCE), '_')) AS MPOB_DEVICE
                     ,FULLVISITORID AS MPOB_FULLVISITORID
                     ,TOTALS.TOTALTRANSACTIONREVENUE AS MPOB_REVENUE
-                    ,DATE AS MPOB_DATE
                     ,VISITID AS MPOB_VISITID
                 FROM
                     TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
@@ -131,7 +129,6 @@ FROM
             ,NTH(2, SPLIT(TRAFFICSOURCE.CAMPAIGN, '_')) AS MPN_OFFERID
             ,FULLVISITORID AS MPN_FULLVISITORID
             ,TOTALS.TOTALTRANSACTIONREVENUE AS MPN_REVENUE
-            ,DATE AS MPN_DATE
             ,VISITID AS MPN_VISITID
         FROM
             TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
@@ -194,7 +191,6 @@ FROM
                 ,TRAFFICSOURCE.SOURCE AS MT_SOURCE
                 ,FULLVISITORID AS MT_FULLVISITORID
                 ,TOTALS.TOTALTRANSACTIONREVENUE AS MT_REVENUE
-                ,DATE AS MT_DATE
                 ,VISITID AS MT_VISITID
             FROM
                 TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))

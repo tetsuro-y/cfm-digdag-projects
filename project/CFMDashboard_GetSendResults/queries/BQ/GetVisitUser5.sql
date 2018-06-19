@@ -42,7 +42,6 @@ FROM
             ,PWB_OS AS PW_OS
             ,PWB_FULLVISITORID AS PW_FULLVISITORID
             ,PWB_REVENUE AS PW_REVENUE
-            ,PWB_DATE AS PW_DATE
         FROM (
             SELECT
                 FORMAT_UTC_USEC(VISITSTARTTIME * 1000000 + 32400000000) AS PWB_VISITTIME
@@ -67,7 +66,6 @@ FROM
                     ELSE NULL
                 END AS PWB_FULLVISITORID--ウェブビュー遷移のマスPUSHのみFULLVISITORIDを取得、それ以外は収益のみの取得
                 ,TOTALS.TOTALTRANSACTIONREVENUE AS PWB_REVENUE
-                ,DATE AS PWB_DATE
             FROM
                 TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
                 ,TABLE_DATE_RANGE([89629218.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
@@ -103,7 +101,6 @@ FROM
             ,PMN_CAMPAIGNID
             ,PMN_OS
             ,PMN_FULLVISITORID
-            ,PMN_DATE
         FROM
             --PUSH_MASS_NATIVE/*PREFIX = PMN*/
             --iOS
@@ -113,7 +110,6 @@ FROM
                 ,CONCAT(NTH(1, SPLIT(REGEXP_REPLACE(HITS.APPINFO.SCREENNAME, R'^.*PUSH_', ''), '_')), '_', NTH(2, SPLIT(REGEXP_REPLACE(HITS.APPINFO.SCREENNAME, R'^.*PUSH_', ''), '_'))) AS PMN_CAMPAIGNID
                 ,1 AS PMN_OS
                 ,FULLVISITORID AS PMN_FULLVISITORID
-                ,DATE AS PMN_DATE
             FROM
                 TABLE_DATE_RANGE([90402834.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
             WHERE
@@ -125,7 +121,6 @@ FROM
                 ,CONCAT(NTH(1, SPLIT(REGEXP_REPLACE(HITS.APPINFO.SCREENNAME, R'^.*PUSH_', ''), '_')), '_', NTH(2, SPLIT(REGEXP_REPLACE(HITS.APPINFO.SCREENNAME, R'^.*PUSH_', ''), '_'))) AS PMN_CAMPAIGNID
                 ,2 AS PMN_OS
                 ,FULLVISITORID AS PMN_FULLVISITORID
-                ,DATE AS PMN_DATE
             FROM
                 TABLE_DATE_RANGE([90303901.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
             WHERE
@@ -161,7 +156,6 @@ FROM
             ,PN_CAMPAIGNID
             ,PN_OS
             ,PN_FULLVISITORID
-            ,PN_DATE
         FROM
             --PUSH_NEWARRIVAL/*PREFIX = PN*/
             --iOS
@@ -171,7 +165,6 @@ FROM
                 ,CONCAT(NTH(1, SPLIT(REGEXP_REPLACE(HITS.APPINFO.SCREENNAME, R'^.*PUSH_', ''), '_')), '_', NTH(2, SPLIT(REGEXP_REPLACE(HITS.APPINFO.SCREENNAME, R'^.*PUSH_', ''), '_'))) AS PN_CAMPAIGNID
                 ,1 AS PN_OS
                 ,FULLVISITORID AS PN_FULLVISITORID
-                ,DATE AS PN_DATE
             FROM
                 TABLE_DATE_RANGE([90402834.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
             WHERE
@@ -183,7 +176,6 @@ FROM
                 ,CONCAT(NTH(1, SPLIT(REGEXP_REPLACE(HITS.APPINFO.SCREENNAME, R'^.*PUSH_', ''), '_')), '_', NTH(2, SPLIT(REGEXP_REPLACE(HITS.APPINFO.SCREENNAME, R'^.*PUSH_', ''), '_'))) AS PN_CAMPAIGNID
                 ,2 AS PN_OS
                 ,FULLVISITORID AS PN_FULLVISITORID
-                ,DATE AS PN_DATE
             FROM
                 TABLE_DATE_RANGE([90303901.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
             WHERE
@@ -219,7 +211,6 @@ FROM
             ,PP_CAMPAIGNID
             ,PP_OS
             ,PP_FULLVISITORID
-            ,PP_DATE
         FROM
             --PUSH_PERSONALIZE/*PREFIX = PP*/
             --iOS
@@ -229,7 +220,6 @@ FROM
                 ,NTH(1, SPLIT(REGEXP_REPLACE(HITS.APPINFO.SCREENNAME, R'^.*PUSH_P', ''), '_')) AS PP_CAMPAIGNID
                 ,1 AS PP_OS
                 ,FULLVISITORID AS PP_FULLVISITORID
-                ,DATE AS PP_DATE
             FROM
                 TABLE_DATE_RANGE([90402834.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
             WHERE
@@ -241,7 +231,6 @@ FROM
                 ,NTH(1, SPLIT(REGEXP_REPLACE(HITS.APPINFO.SCREENNAME, R'^.*PUSH_P', ''), '_')) AS PP_CAMPAIGNID
                 ,2 AS PP_OS
                 ,FULLVISITORID AS PP_FULLVISITORID
-                ,DATE AS PP_DATE
             FROM
                 TABLE_DATE_RANGE([90303901.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
             WHERE

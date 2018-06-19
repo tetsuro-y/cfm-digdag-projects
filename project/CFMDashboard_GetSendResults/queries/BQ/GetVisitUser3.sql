@@ -60,7 +60,6 @@ FROM
                 ,MNUB_FULLVISITORID AS MNU_FULLVISITORID
                 ,MNUB_VISITID AS MNU_VISITID
                 ,MNUB_REVENUE AS MNU_REVENUE
-                ,MNUB_DATE AS MNU_DATE
             FROM (
                 SELECT
                     FORMAT_UTC_USEC(VISITSTARTTIME * 1000000 + 32400000000) AS MNUB_VISITTIME
@@ -70,7 +69,6 @@ FROM
                     ,NTH(1, SPLIT(TRAFFICSOURCE.CAMPAIGN, '_')) AS MNUB_EMAILID
                     ,FULLVISITORID AS MNUB_FULLVISITORID
                     ,TOTALS.TOTALTRANSACTIONREVENUE AS MNUB_REVENUE
-                    ,DATE AS MNUB_DATE
                     ,VISITID AS MNUB_VISITID
                 FROM
                     TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))

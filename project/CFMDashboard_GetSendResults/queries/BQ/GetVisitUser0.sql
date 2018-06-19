@@ -44,7 +44,6 @@ FROM
                 ,TRAFFICSOURCE.SOURCE AS LM_SOURCE
                 ,FULLVISITORID AS LM_FULLVISITORID
                 ,TOTALS.TOTALTRANSACTIONREVENUE AS LM_REVENUE
-                ,DATE AS LM_DATE
                 ,VISITID AS LM_VISITID
             FROM
                 TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
@@ -108,7 +107,6 @@ FROM
                 ,NTH(3, SPLIT(TRAFFICSOURCE.SOURCE, '_')) AS LPO_SOURCE
                 ,FULLVISITORID AS LPO_FULLVISITORID
                 ,TOTALS.TOTALTRANSACTIONREVENUE AS LPO_REVENUE
-                ,DATE AS LPO_DATE
                 ,VISITID AS LPO_VISITID
             FROM
                 TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
@@ -171,7 +169,6 @@ FROM
             ,NTH(2, SPLIT(TRAFFICSOURCE.CAMPAIGN, '_')) AS LPN_OFFERID
             ,FULLVISITORID AS LPN_FULLVISITORID
             ,TOTALS.TOTALTRANSACTIONREVENUE AS LPN_REVENUE
-            ,DATE AS LPN_DATE
             ,VISITID AS LPN_VISITID
         FROM
             TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
@@ -233,7 +230,6 @@ FROM
                 ,TRAFFICSOURCE.SOURCE AS LT_SOURCE
                 ,FULLVISITORID AS LT_FULLVISITORID
                 ,TOTALS.TOTALTRANSACTIONREVENUE AS LT_REVENUE
-                ,DATE AS LT_DATE
                 ,VISITID AS LT_VISITID
             FROM
                 TABLE_DATE_RANGE([109049626.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
