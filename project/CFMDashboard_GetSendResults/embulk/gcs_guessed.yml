@@ -28,7 +28,7 @@ in:
     - {name: HVU_EMAILID, type: long}
     - {name: HVU_OFFERID, type: long}
     - {name: HVU_VISITTIME, type: timestamp, format: '%Y/%m/%d %H:%M:%S'}
-    - {name: HVU_CV_FULLVISITORID, type: string}
+    - {name: HVU_FULLVISITORID_CV, type: string}
     - {name: HVU_REVENUE, type: long}
 filters:
   - type: timestamp_format
