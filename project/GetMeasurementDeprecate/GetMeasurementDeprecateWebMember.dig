@@ -1,30 +1,27 @@
 timezone: Asia/Tokyo
 
-#schedule:
-#  daily>: 11:00:00
-
 _export:
   wf:
-    name: "ZOZOTOWNアプリ利用者のデバイス情報取得処理 (GetMeasurementDeprecateAppDeviceInfo) by DigDag"
+    name: "ZOZOTOWNサイト利用者のZOZOSUIT計測非推奨端末利用ユーザ取得処理 (GetWebMember) by DigDag"
 
   bq:
     dataset_name: temp
-    table_name: GetMeasurementDeprecateAppDeviceInfoTemp
-    destination: gs://stk-bigquery-export/GetMeasurementDeprecateAppDeviceInfo_*.csv.gz
-    query: queries/BQ/GetMeasurementDeprecateAppDeviceInfo.sql
+    table_name: GetWebMemberTemp
+    destination: gs://stk-bigquery-export/GetWebMember_*.csv.gz
+    query: queries/BQ/GetWebMember.sql
 
   embulk:
-    yml_path: embulk/gcs_fileload_guessed.yml
-    file_path: /tmp/embulk/GetMeasurementDeprecateAppDeviceInfo
-    file_prefix: GetMeasurementDeprecateAppDeviceInfo_
-    out_file: loadfile_GetMeasurementDeprecateAppDeviceInfo.csv
+    yml_path: embulk/gcs_fileload_guessed_webMember.yml
+    file_path: /tmp/embulk/GetWebMember
+    file_prefix: GetWebMember_
+    out_file: loadfile_GetWebMember.csv
     key_file_path: /var/lib/digdag/.credential/gcpcredential.json
 
   pure:
     jar: /var/lib/digdag/puredata/nzExecuteSql-1.0.1.jar
     class: jp.stk.cfm.ExecuteSqls
     properties: /var/lib/digdag/puredata/dbconnection.properties
-    query_dir: queries/DWH
+    query_dir: queries/DWH/WebMember
 
   my_param:
     - DIGDAGSERVER_HOST
@@ -58,7 +55,7 @@ _error:
 +start:
   echo>: start ${moment(session_time).utc().format('YYYY-MM-DD HH:mm:ss Z')}
 
-+create_table:
++get_bqdata:
   +pre_delete_gcs_file:
     sh>: gsutil rm -rf ${bq.destination} || echo "no target file at the bucket"
 
@@ -86,18 +83,18 @@ _error:
     delete_tables:
       - ${bq.dataset_name}.${bq.table_name}
 
-+download_file:
-  +prepare_dir:
-    sh>: mkdir -p ${embulk.file_path}
+  +download_file:
+    +prepare_dir:
+      sh>: mkdir -p ${embulk.file_path}
 
-  +download_local:
-    embulk>: ${embulk.yml_path}
+    +download_local:
+      embulk>: ${embulk.yml_path}
 
-  +merge_file:
-    sh>: cat ${embulk.file_path}/${embulk.file_prefix}* > ${embulk.file_path}/${embulk.out_file} && rm -r ${embulk.file_path}/${embulk.file_prefix}*
+    +merge_file:
+      sh>: cat ${embulk.file_path}/${embulk.file_prefix}* > ${embulk.file_path}/${embulk.out_file} && rm -r ${embulk.file_path}/${embulk.file_prefix}*
 
-  +post_delete_gcs_file:
-    sh>: gsutil rm -rf ${bq.destination} || echo "no target file at the bucket"
+    +post_delete_gcs_file:
+      sh>: gsutil rm -rf ${bq.destination} || echo "no target file at the bucket"
 
 +insert_puredata:
   +load_sql:

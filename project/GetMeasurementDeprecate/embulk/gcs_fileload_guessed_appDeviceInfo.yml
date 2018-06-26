@@ -1,7 +1,7 @@
 in:
   type: gcs
   bucket: stk-bigquery-export
-  path_prefix: GetMeasurementDeprecateAppDeviceInfo_
+  path_prefix: GetAppDeviceInfo_
   auth_method: json_key
   json_keyfile: ${embulk.key_file_path}
   decoders:
