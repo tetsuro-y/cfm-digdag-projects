@@ -47,7 +47,7 @@ SELECT
     ,DD_CNT_SEND_MO                                        AS RTR_CNT_SEND_MO
     ,DD_CNT_OPEN_PC                                        AS RTR_CNT_OPEN_PC
     ,ROUND(100.0 * DD_CNT_OPEN_PC / DD_CNT_SEND_PC, 2)     AS RTR_RATE_OPEN_PC
-    ,VD_VISIT_TOTAL                                        AS RTR_CNT_CLICK_ALL
+    ,NVL(VD_VISIT_TOTAL, 0)                                AS RTR_CNT_CLICK_ALL
     ,NULL                                                 AS RTR_CNT_CLICK_PC
     ,NULL                                                 AS RTR_CNT_CLICK_MO
     ,NULL                                                 AS RTR_RATE_CLICK_PER_OPEN_PC
