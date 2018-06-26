@@ -52,7 +52,7 @@ SELECT
     ,NULL                                                 AS RTR_CNT_CLICK_MO
     ,NULL                                                 AS RTR_RATE_CLICK_PER_OPEN_PC
     ,NULL                                                 AS RTR_RATE_CLICK_PER_OPEN_MO
-    ,VD_REVENUE_TOTAL                                      AS RTR_REVENUE_TOTAL_ALL
+    ,NVL(VD_REVENUE_TOTAL, 0)                              AS RTR_REVENUE_TOTAL_ALL
     ,NULL                                                 AS RTR_REVENUE_TOTAL_PC
     ,NULL                                                 AS RTR_REVENUE_TOTAL_MO
 FROM (
