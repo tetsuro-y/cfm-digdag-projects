@@ -37,7 +37,7 @@ AND (
         DEVICE_OS = 'Android'
     AND NOT REGEXP_MATCH(DEVICE_INFO,'.*Galaxy.*(S5|S7|S8).*')
     AND NOT REGEXP_MATCH(DEVICE_INFO,'.*Xperia.*(XZ|X Compact|X Performance).*')
-    AND NOT REGEXP_MATCH(DEVICE_INFO,'.*AQUOS.*(R|ZETA).*')
+    AND NOT REGEXP_MATCH(DEVICE_INFO,'.*AQUOS.*(R|ZETA|sense).*')
     )
     OR (
         DEVICE_OS = 'iOS'
