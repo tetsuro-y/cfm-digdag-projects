@@ -31,7 +31,7 @@ FROM
                         device.operatingSystem = 'Android'
                     AND NOT REGEXP_MATCH(device.mobileDeviceInfo,'.*Galaxy.*(S5|S7|S8).*')
                     AND NOT REGEXP_MATCH(device.mobileDeviceInfo,'.*Xperia.*(XZ|X Compact|X Performance).*')
-                    AND NOT REGEXP_MATCH(device.mobileDeviceInfo,'.*AQUOS.*(R|ZETA).*')
+                    AND NOT REGEXP_MATCH(device.mobileDeviceInfo,'.*AQUOS.*(R|ZETA|sense).*')
                     )
                     OR (
                         device.operatingSystem = 'iOS'
