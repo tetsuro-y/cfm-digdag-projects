@@ -8,20 +8,31 @@ mkdir -p /tmp/filemerge
 
 targetdt=$(date +"%Y%m%d%H%M%S")
 tmppath=/tmp/filemerge/${targetdt}
+
+# 該当ファイルをファイルに吐き出す
 listfile=/tmp/filemerge/${targetdt}.txt
 aws s3 ls stk-rmd-recommend-production/transfer/accesslog/ --profile JP1_DIGDAG | awk '{print $4}' | grep a > ${listfile}
 file_length=$(cat ${listfile} | wc -l)
 
+# 繰り返しループする回数を決定する
 if [ $(( ${file_length} % 100 )) -eq 0 ]; then
-    loop=$(( ${file_length} / 100))
+    loop=$(( ${file_length} / 100 ))
 else
-    loop=$(( ${file_length} / 100 + 1))
+    loop=$(( ${file_length} / 100 + 1 ))
 fi
 
-echo $loop
+echo loop is ${loop}
+
+# ディレクトリがない場合に作成する
+mkdir -p ${tmppath}
+# 前回の実行などでファイルが既にある場合に削除する
+rm -f ${tmppath}/*
 
 for i in $(seq 1 ${loop}); do
-    echo $(( (${i} - 1) * 100 + 1 )),$(( (${i}) * 100 ))
+    # ループの開始と終了ポジジョン
+    echo $(( (${i} - 1) * 100 + 1 )),$(( ${i} * 100 ))
+
+    # 該当ファイルを取得する
     files=$(cat ${listfile} | sed -n $(( (${i} - 1) * 100 + 1 )),$(( (${i}) * 100 ))p)
     echo $files
 
@@ -40,6 +51,7 @@ for i in $(seq 1 ${loop}); do
     echo "upload new file to s3"
     aws s3 cp ${tmppath}/merged_accesslog-${targetdt}.tsv s3://stk-rmd-recommend-production/transfer/accesslog/accesslog-${targetdt}-${i}.tsv --profile JP1_DIGDAG
 
+    # ダウンロードしたファイルを削除する
     rm -f ${tmppath}/*
 done
 
