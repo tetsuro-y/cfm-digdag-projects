@@ -1,7 +1,7 @@
 in:
   type: gcs
   bucket: stk-bigquery-export
-  path_prefix: measurement_scanning_error_uid_
+  path_prefix: GetAppDeviceInfo_
   auth_method: json_key
   json_keyfile: ${embulk.key_file_path}
   decoders:
@@ -19,16 +19,10 @@ in:
     allow_optional_columns: false
     columns:
     - {name: VISITSTARTDT, type: timestamp, format: '%Y-%m-%d %H:%M:%S'}
-    - {name: fullVisitorId, type: string}
     - {name: uid, type: string}
-    - {name: visitId, type: string}
-    - {name: EVENTCATEGORY, type: string}
-    - {name: HITS_APPINFO_VERSION, type: string}
-    - {name: DEVICE_MARKETINGNAME, type: string}
     - {name: DEVICE_INFO, type: string}
     - {name: DEVICE_MOBILEDEVICEMODEL, type: string}
     - {name: DEVICE_OS, type: string}
-    - {name: DEVICE_OSVERSION, type: string}
 filters:
   - type: timestamp_format
     default_from_timestamp_format: ["%Y-%m-%d %H:%M:%S.%N"]
