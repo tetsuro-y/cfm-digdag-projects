@@ -175,6 +175,7 @@ FROM
             ,TABLE_DATE_RANGE([89629218.ga_sessions_],TIMESTAMP('${ga_start_date}'), TIMESTAMP('${ga_end_date}'))
         WHERE
             TRAFFICSOURCE.MEDIUM = 'linepersonal'
+            AND LENGTH(TRAFFICSOURCE.CAMPAIGN) > 12--3.0はOFFERIDがついているので
     ) AS LINE_PERSONALIZE_NEW/*PREFIX = LPN*/
     LEFT OUTER JOIN (
         SELECT
