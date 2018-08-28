@@ -173,8 +173,8 @@ FROM (
                 INNER JOIN TORDERDETAIL ON ORORDERID = ODORDERID
                 INNER JOIN TORDERINFO ON ORORDERID = OIORDERID
             WHERE
-                ORORDERDT >= '2017/06/01'::TIMESTAMP
-                AND ORORDERDT < '2018/06/01'::TIMESTAMP
+                ORORDERDT >= DATE_TRUNC('MONTH', CURRENT_DATE) + INTERVAL'-1MONTH' + INTERVAL'-1YEAR'
+                AND ORORDERDT < DATE_TRUNC('MONTH', CURRENT_DATE) + INTERVAL'-1MONTH'
                 AND ORMALLID = 1
                 AND ORORDERID = ORORIGINALORDERID --発送後キャンセルを考慮しない。上記ORORDERSTATUSの-1除外だけでは発送後キャンセルが含まれるためこの指定が必要
                 AND ORPAYMENTTYPEID <> 13 --定期便の注文を除外
