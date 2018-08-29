@@ -4,6 +4,8 @@ in:
   path_prefix: measurement_scanning_error_uid_
   auth_method: json_key
   json_keyfile: C:\Users\rik-83\Desktop\zozo-70a08e5ccb2b_local.json
+  decoders:
+  - {type: gzip}
   parser:
     charset: UTF-8
     newline: CRLF
