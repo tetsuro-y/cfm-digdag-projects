@@ -9,14 +9,35 @@ FROM (
         STRFTIME_UTC_USEC(VISITSTARTTIME * 1000000 + 32400000000, "%Y/%m/%d") AS DT
         ,CASE WHEN REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*') IS FALSE THEN 1 ELSE 2 END AS DEVICE
         ,CASE WHEN REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*shop/[^/]+/goods/\d+/(\?|$)') THEN 1 ELSE 2 END AS PRICETYPEID--1:プロパー 2:セール
-        ,EXACT_COUNT_DISTINCT(FULLVISITORID) AS UU
-    FROM
-        TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
+        ,EXACT_COUNT_DISTINCT(PAGE.FULLVISITORID) AS UU
+    FROM (
+        SELECT
+            VISITSTARTTIME
+            ,HITS.PAGE.PAGEPATH
+            ,FULLVISITORID
+        FROM
+            TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
+        WHERE
+            TRAFFICSOURCE.SOURCE NOT IN ('ios', 'android')
+            AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/app/') IS FALSE
+            AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*\?app=1') IS FALSE
+            AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*shop/[^/]+/goods(-sale)*/\d+/(\?|$)') --goodsページに限定
+    ) AS PAGE
+    LEFT OUTER JOIN (
+        --Firefox ver38.0経由の不審な流入除外
+        SELECT
+            FULLVISITORID
+        FROM
+            TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
+        WHERE
+            DEVICE.LANGUAGE = 'en-us'
+            AND DEVICE.BROWSER = 'Firefox'
+            AND DEVICE.BROWSERVERSION = '38.0'
+        GROUP EACH BY
+            FULLVISITORID
+    ) AS EXCLUDE ON PAGE.FULLVISITORID = EXCLUDE.FULLVISITORID
     WHERE
-        TRAFFICSOURCE.SOURCE NOT IN ('ios', 'android')
-        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/app/') IS FALSE
-        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*\?app=1') IS FALSE
-        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*shop/[^/]+/goods(-sale)*/\d+/(\?|$)') --goodsページに限定
+        EXCLUDE.FULLVISITORID IS NULL
     GROUP EACH BY
         DT
         ,DEVICE

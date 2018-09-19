@@ -35,20 +35,44 @@ FROM (
             FROM (
                 SELECT
                     VISITSTARTTIME
-                    ,FULLVISITORID
+                    ,PAGE.FULLVISITORID AS FULLVISITORID
                     ,VISITID
-                    ,HITS.HITNUMBER AS HITNUMBER
-                    ,CASE WHEN REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*') IS FALSE THEN 1 ELSE 2 END AS DEVICEID
-                    ,CONCAT(FULLVISITORID, STRING(VISITID), STRING(HITS.HITNUMBER)) AS UNIQUEID--閲覧回数分のレコードをカウントできるよう仮想IDをつくる
-                FROM
-                    TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
-                WHERE
-                    TRAFFICSOURCE.SOURCE NOT IN ('ios', 'android')
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/app/') IS FALSE
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*\?app=1') IS FALSE
-                    AND HITS.TYPE = 'PAGE'
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*($|default\.html|\?)')--トップ
-            ) AS PAGE
+                    ,HITNUMBER
+                    ,DEVICEID
+                    ,UNIQUEID
+                FROM (
+                    SELECT
+                        VISITSTARTTIME
+                        ,FULLVISITORID
+                        ,VISITID
+                        ,HITS.HITNUMBER AS HITNUMBER
+                        ,CASE WHEN REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*') IS FALSE THEN 1 ELSE 2 END AS DEVICEID
+                        ,CONCAT(FULLVISITORID, STRING(VISITID), STRING(HITS.HITNUMBER)) AS UNIQUEID--閲覧回数分のレコードをカウントできるよう仮想IDをつくる
+                    FROM
+                        TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
+                    WHERE
+                        TRAFFICSOURCE.SOURCE NOT IN ('ios', 'android')
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/app/') IS FALSE
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*\?app=1') IS FALSE
+                        AND HITS.TYPE = 'PAGE'
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*($|default\.html|\?)')--トップ
+                ) AS PAGE
+                LEFT OUTER JOIN (
+                    --Firefox ver38.0経由の不審な流入除外
+                    SELECT
+                        FULLVISITORID
+                    FROM
+                        TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
+                    WHERE
+                        DEVICE.LANGUAGE = 'en-us'
+                        AND DEVICE.BROWSER = 'Firefox'
+                        AND DEVICE.BROWSERVERSION = '38.0'
+                    GROUP EACH BY
+                        FULLVISITORID
+                ) AS EXCLUDE ON PAGE.FULLVISITORID = EXCLUDE.FULLVISITORID
+            WHERE
+                EXCLUDE.FULLVISITORID IS NULL
+            ) AS UU_BASE
         GROUP BY
             UU_DT
             ,UU_DEVICEID
@@ -64,19 +88,42 @@ FROM (
             FROM (
                 SELECT
                     VISITSTARTTIME
-                    ,CASE WHEN REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*') IS FALSE THEN 1 ELSE 2 END AS DEVICEID
-                    ,TOTALS.BOUNCES AS BOUNCE--直帰したセッションはここが1になる。その他はnull
-                    ,VISITNUMBER--このユーザーのセッション数
-                FROM
-                    TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
+                    ,DEVICEID
+                    ,BOUNCE
+                    ,VISITNUMBER
+                FROM (
+                    SELECT
+                        VISITSTARTTIME
+                        ,CASE WHEN REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*') IS FALSE THEN 1 ELSE 2 END AS DEVICEID
+                        ,TOTALS.BOUNCES AS BOUNCE--直帰したセッションはここが1になる。その他はnull
+                        ,VISITNUMBER--このユーザーのセッション数
+                        ,FULLVISITORID
+                    FROM
+                        TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
+                    WHERE
+                        TRAFFICSOURCE.SOURCE NOT IN ('ios', 'android')
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/app/') IS FALSE
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*\?app=1') IS FALSE
+                        AND HITS.TYPE = 'PAGE'
+                        AND HITS.ISENTRANCE IS TRUE
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*($|default\.html|\?)')--トップ
+                ) AS PAGE
+                LEFT OUTER JOIN (
+                    --Firefox ver38.0経由の不審な流入除外
+                    SELECT
+                        FULLVISITORID
+                    FROM
+                        TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
+                    WHERE
+                        DEVICE.LANGUAGE = 'en-us'
+                        AND DEVICE.BROWSER = 'Firefox'
+                        AND DEVICE.BROWSERVERSION = '38.0'
+                    GROUP EACH BY
+                        FULLVISITORID
+                ) AS EXCLUDE ON PAGE.FULLVISITORID = EXCLUDE.FULLVISITORID
                 WHERE
-                    TRAFFICSOURCE.SOURCE NOT IN ('ios', 'android')
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/app/') IS FALSE
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*\?app=1') IS FALSE
-                    AND HITS.TYPE = 'PAGE'
-                    AND HITS.ISENTRANCE IS TRUE
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*($|default\.html|\?)')--トップ
-            ) AS PAGE
+                    EXCLUDE.FULLVISITORID IS NULL
+            ) AS BOUNCE_BASE
             GROUP BY
                 BOUNCE_DT
                 ,BOUNCE_DEVICEID
@@ -105,6 +152,19 @@ FROM (
                 AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*($|default\.html|\?)')--トップ
         ) AS PAGE
         LEFT OUTER JOIN (
+            --Firefox ver38.0経由の不審な流入除外
+            SELECT
+                FULLVISITORID
+            FROM
+                TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
+            WHERE
+                DEVICE.LANGUAGE = 'en-us'
+                AND DEVICE.BROWSER = 'Firefox'
+                AND DEVICE.BROWSERVERSION = '38.0'
+            GROUP EACH BY
+                FULLVISITORID
+        ) AS EXCLUDE ON PAGE.FULLVISITORID = EXCLUDE.FULLVISITORID
+        LEFT OUTER JOIN (
             SELECT
                 FULLVISITORID
                 ,VISITID
@@ -121,6 +181,8 @@ FROM (
                 ,VISITID
                 ,HITNUMBER
         ) AS ARIGATO ON PAGE.FULLVISITORID = ARIGATO.FULLVISITORID AND PAGE.VISITID = ARIGATO.VISITID
+        WHERE
+            EXCLUDE.FULLVISITORID IS NULL
         GROUP BY
             CV_DT
             ,CV_DEVICEID
@@ -155,21 +217,45 @@ FROM (
             FROM (
                 SELECT
                     VISITSTARTTIME
-                    ,FULLVISITORID
+                    ,PAGE.FULLVISITORID AS FULLVISITORID
                     ,VISITID
-                    ,HITS.HITNUMBER AS HITNUMBER
-                    ,CASE WHEN REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*') IS FALSE THEN 1 ELSE 2 END AS DEVICEID
-                    ,CONCAT(FULLVISITORID, STRING(VISITID), STRING(HITS.HITNUMBER)) AS UNIQUEID--閲覧回数分のレコードをカウントできるよう仮想IDをつくる
-                FROM
-                    TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
-                WHERE
-                    TRAFFICSOURCE.SOURCE NOT IN ('ios', 'android')
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/app/') IS FALSE
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*\?app=1') IS FALSE
-                    AND HITS.TYPE = 'PAGE'
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*(((wo)*men|kids|home)-)*(shop|brand|category|search)/')
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*(zozoused/)*(((wo)*men|kids|home)-)*(shop|brand|category)/(zozoused/(innerbrandlist|innershoplist|brand|news|category|$|\?|welcome|aboutsize|aboutcondition|default)|sizeguide(_.+)*\.html|request_mail\.html|innerbrandlist|innershoplist|default|\?|$|[^/]+/((no)*goods|requestnew|viewerHTML5\.html|viewerSimple\.html|(comingsoon|close)\.html))') IS FALSE--検索結果_全体
-            ) AS PAGE
+                    ,HITNUMBER
+                    ,DEVICEID
+                    ,UNIQUEID
+                FROM (
+                    SELECT
+                        VISITSTARTTIME
+                        ,FULLVISITORID
+                        ,VISITID
+                        ,HITS.HITNUMBER AS HITNUMBER
+                        ,CASE WHEN REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*') IS FALSE THEN 1 ELSE 2 END AS DEVICEID
+                        ,CONCAT(FULLVISITORID, STRING(VISITID), STRING(HITS.HITNUMBER)) AS UNIQUEID--閲覧回数分のレコードをカウントできるよう仮想IDをつくる
+                    FROM
+                        TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
+                    WHERE
+                        TRAFFICSOURCE.SOURCE NOT IN ('ios', 'android')
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/app/') IS FALSE
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*\?app=1') IS FALSE
+                        AND HITS.TYPE = 'PAGE'
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*(((wo)*men|kids|home)-)*(shop|brand|category|search)/')
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*(zozoused/)*(((wo)*men|kids|home)-)*(shop|brand|category)/(zozoused/(innerbrandlist|innershoplist|brand|news|category|$|\?|welcome|aboutsize|aboutcondition|default)|sizeguide(_.+)*\.html|request_mail\.html|innerbrandlist|innershoplist|default|\?|$|[^/]+/((no)*goods|requestnew|viewerHTML5\.html|viewerSimple\.html|(comingsoon|close)\.html))') IS FALSE--検索結果_全体
+                ) AS PAGE
+                LEFT OUTER JOIN (
+                    --Firefox ver38.0経由の不審な流入除外
+                    SELECT
+                        FULLVISITORID
+                    FROM
+                        TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
+                    WHERE
+                        DEVICE.LANGUAGE = 'en-us'
+                        AND DEVICE.BROWSER = 'Firefox'
+                        AND DEVICE.BROWSERVERSION = '38.0'
+                    GROUP EACH BY
+                        FULLVISITORID
+                ) AS EXCLUDE ON PAGE.FULLVISITORID = EXCLUDE.FULLVISITORID
+            WHERE
+                EXCLUDE.FULLVISITORID IS NULL
+            ) AS UU_BASE
         GROUP BY
             UU_DT
             ,UU_DEVICEID
@@ -185,20 +271,43 @@ FROM (
             FROM (
                 SELECT
                     VISITSTARTTIME
-                    ,CASE WHEN REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*') IS FALSE THEN 1 ELSE 2 END AS DEVICEID
-                    ,TOTALS.BOUNCES AS BOUNCE--直帰したセッションはここが1になる。その他はnull
-                    ,VISITNUMBER--このユーザーのセッション数
-                FROM
-                    TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
+                    ,DEVICEID
+                    ,BOUNCE
+                    ,VISITNUMBER
+                FROM (
+                    SELECT
+                        VISITSTARTTIME
+                        ,CASE WHEN REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*') IS FALSE THEN 1 ELSE 2 END AS DEVICEID
+                        ,TOTALS.BOUNCES AS BOUNCE--直帰したセッションはここが1になる。その他はnull
+                        ,VISITNUMBER--このユーザーのセッション数
+                        ,FULLVISITORID
+                    FROM
+                        TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
+                    WHERE
+                        TRAFFICSOURCE.SOURCE NOT IN ('ios', 'android')
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/app/') IS FALSE
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*\?app=1') IS FALSE
+                        AND HITS.TYPE = 'PAGE'
+                        AND HITS.ISENTRANCE IS TRUE
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*(((wo)*men|kids|home)-)*(shop|brand|category|search)/')
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*(zozoused/)*(((wo)*men|kids|home)-)*(shop|brand|category)/(zozoused/(innerbrandlist|innershoplist|brand|news|category|$|\?|welcome|aboutsize|aboutcondition|default)|sizeguide(_.+)*\.html|request_mail\.html|innerbrandlist|innershoplist|default|\?|$|[^/]+/((no)*goods|requestnew|viewerHTML5\.html|viewerSimple\.html|(comingsoon|close)\.html))') IS FALSE--検索結果_全体
+                ) AS PAGE
+                LEFT OUTER JOIN (
+                    --Firefox ver38.0経由の不審な流入除外
+                    SELECT
+                        FULLVISITORID
+                    FROM
+                        TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
+                    WHERE
+                        DEVICE.LANGUAGE = 'en-us'
+                        AND DEVICE.BROWSER = 'Firefox'
+                        AND DEVICE.BROWSERVERSION = '38.0'
+                    GROUP EACH BY
+                        FULLVISITORID
+                ) AS EXCLUDE ON PAGE.FULLVISITORID = EXCLUDE.FULLVISITORID
                 WHERE
-                    TRAFFICSOURCE.SOURCE NOT IN ('ios', 'android')
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/app/') IS FALSE
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*\?app=1') IS FALSE
-                    AND HITS.TYPE = 'PAGE'
-                    AND HITS.ISENTRANCE IS TRUE
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*(((wo)*men|kids|home)-)*(shop|brand|category|search)/')
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*(zozoused/)*(((wo)*men|kids|home)-)*(shop|brand|category)/(zozoused/(innerbrandlist|innershoplist|brand|news|category|$|\?|welcome|aboutsize|aboutcondition|default)|sizeguide(_.+)*\.html|request_mail\.html|innerbrandlist|innershoplist|default|\?|$|[^/]+/((no)*goods|requestnew|viewerHTML5\.html|viewerSimple\.html|(comingsoon|close)\.html))') IS FALSE--検索結果_全体
-            ) AS PAGE
+                    EXCLUDE.FULLVISITORID IS NULL
+            ) AS BOUNCE_BASE
             GROUP BY
                 BOUNCE_DT
                 ,BOUNCE_DEVICEID
@@ -228,6 +337,19 @@ FROM (
                 AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*(zozoused/)*(((wo)*men|kids|home)-)*(shop|brand|category)/(zozoused/(innerbrandlist|innershoplist|brand|news|category|$|\?|welcome|aboutsize|aboutcondition|default)|sizeguide(_.+)*\.html|request_mail\.html|innerbrandlist|innershoplist|default|\?|$|[^/]+/((no)*goods|requestnew|viewerHTML5\.html|viewerSimple\.html|(comingsoon|close)\.html))') IS FALSE--検索結果_全体
         ) AS PAGE
         LEFT OUTER JOIN (
+            --Firefox ver38.0経由の不審な流入除外
+            SELECT
+                FULLVISITORID
+            FROM
+                TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
+            WHERE
+                DEVICE.LANGUAGE = 'en-us'
+                AND DEVICE.BROWSER = 'Firefox'
+                AND DEVICE.BROWSERVERSION = '38.0'
+            GROUP EACH BY
+                FULLVISITORID
+        ) AS EXCLUDE ON PAGE.FULLVISITORID = EXCLUDE.FULLVISITORID
+        LEFT OUTER JOIN (
             SELECT
                 FULLVISITORID
                 ,VISITID
@@ -244,6 +366,8 @@ FROM (
                 ,VISITID
                 ,HITNUMBER
         ) AS ARIGATO ON PAGE.FULLVISITORID = ARIGATO.FULLVISITORID AND PAGE.VISITID = ARIGATO.VISITID
+        WHERE
+            EXCLUDE.FULLVISITORID IS NULL
         GROUP BY
             CV_DT
             ,CV_DEVICEID
@@ -251,7 +375,7 @@ FROM (
 ),
 (
     --検索結果_ショップ
-        SELECT
+    SELECT
         UU_DT AS SAP_DT
         ,UU_DEVICEID AS SAP_DEVICEID
         ,3 AS SAP_PAGECATEGORYID
@@ -278,21 +402,45 @@ FROM (
             FROM (
                 SELECT
                     VISITSTARTTIME
-                    ,FULLVISITORID
+                    ,PAGE.FULLVISITORID AS FULLVISITORID
                     ,VISITID
-                    ,HITS.HITNUMBER AS HITNUMBER
-                    ,CASE WHEN REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*') IS FALSE THEN 1 ELSE 2 END AS DEVICEID
-                    ,CONCAT(FULLVISITORID, STRING(VISITID), STRING(HITS.HITNUMBER)) AS UNIQUEID--閲覧回数分のレコードをカウントできるよう仮想IDをつくる
-                FROM
-                    TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
-                WHERE
-                    TRAFFICSOURCE.SOURCE NOT IN ('ios', 'android')
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/app/') IS FALSE
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*\?app=1') IS FALSE
-                    AND HITS.TYPE = 'PAGE'
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*(((wo)*men|kids)-)*shop/[^/]+/')
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*(zozoused/)*(((wo)*men|kids|home)-)*(shop|brand|category)/(zozoused/(innerbrandlist|innershoplist|brand|news|category|$|\?|welcome|aboutsize|aboutcondition|default)|sizeguide(_.+)*\.html|request_mail\.html|innerbrandlist|innershoplist|default|\?|$|[^/]+/((no)*goods|requestnew|viewerHTML5\.html|viewerSimple\.html|(comingsoon|close)\.html))') IS FALSE--検索結果_ショップ
-            ) AS PAGE
+                    ,HITNUMBER
+                    ,DEVICEID
+                    ,UNIQUEID
+                FROM (
+                    SELECT
+                        VISITSTARTTIME
+                        ,FULLVISITORID
+                        ,VISITID
+                        ,HITS.HITNUMBER AS HITNUMBER
+                        ,CASE WHEN REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*') IS FALSE THEN 1 ELSE 2 END AS DEVICEID
+                        ,CONCAT(FULLVISITORID, STRING(VISITID), STRING(HITS.HITNUMBER)) AS UNIQUEID--閲覧回数分のレコードをカウントできるよう仮想IDをつくる
+                    FROM
+                        TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
+                    WHERE
+                        TRAFFICSOURCE.SOURCE NOT IN ('ios', 'android')
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/app/') IS FALSE
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*\?app=1') IS FALSE
+                        AND HITS.TYPE = 'PAGE'
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*(((wo)*men|kids)-)*shop/[^/]+/')
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*(zozoused/)*(((wo)*men|kids|home)-)*(shop|brand|category)/(zozoused/(innerbrandlist|innershoplist|brand|news|category|$|\?|welcome|aboutsize|aboutcondition|default)|sizeguide(_.+)*\.html|request_mail\.html|innerbrandlist|innershoplist|default|\?|$|[^/]+/((no)*goods|requestnew|viewerHTML5\.html|viewerSimple\.html|(comingsoon|close)\.html))') IS FALSE--検索結果_ショップ
+                ) AS PAGE
+                LEFT OUTER JOIN (
+                    --Firefox ver38.0経由の不審な流入除外
+                    SELECT
+                        FULLVISITORID
+                    FROM
+                        TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
+                    WHERE
+                        DEVICE.LANGUAGE = 'en-us'
+                        AND DEVICE.BROWSER = 'Firefox'
+                        AND DEVICE.BROWSERVERSION = '38.0'
+                    GROUP EACH BY
+                        FULLVISITORID
+                ) AS EXCLUDE ON PAGE.FULLVISITORID = EXCLUDE.FULLVISITORID
+            WHERE
+                EXCLUDE.FULLVISITORID IS NULL
+            ) AS UU_BASE
         GROUP BY
             UU_DT
             ,UU_DEVICEID
@@ -308,20 +456,43 @@ FROM (
             FROM (
                 SELECT
                     VISITSTARTTIME
-                    ,CASE WHEN REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*') IS FALSE THEN 1 ELSE 2 END AS DEVICEID
-                    ,TOTALS.BOUNCES AS BOUNCE--直帰したセッションはここが1になる。その他はnull
-                    ,VISITNUMBER--このユーザーのセッション数
-                FROM
-                    TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
+                    ,DEVICEID
+                    ,BOUNCE
+                    ,VISITNUMBER
+                FROM (
+                    SELECT
+                        VISITSTARTTIME
+                        ,CASE WHEN REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*') IS FALSE THEN 1 ELSE 2 END AS DEVICEID
+                        ,TOTALS.BOUNCES AS BOUNCE--直帰したセッションはここが1になる。その他はnull
+                        ,VISITNUMBER--このユーザーのセッション数
+                        ,FULLVISITORID
+                    FROM
+                        TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
+                    WHERE
+                        TRAFFICSOURCE.SOURCE NOT IN ('ios', 'android')
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/app/') IS FALSE
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*\?app=1') IS FALSE
+                        AND HITS.TYPE = 'PAGE'
+                        AND HITS.ISENTRANCE IS TRUE
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*(((wo)*men|kids)-)*shop/[^/]+/')
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*(zozoused/)*(((wo)*men|kids|home)-)*(shop|brand|category)/(zozoused/(innerbrandlist|innershoplist|brand|news|category|$|\?|welcome|aboutsize|aboutcondition|default)|sizeguide(_.+)*\.html|request_mail\.html|innerbrandlist|innershoplist|default|\?|$|[^/]+/((no)*goods|requestnew|viewerHTML5\.html|viewerSimple\.html|(comingsoon|close)\.html))') IS FALSE--検索結果_ショップ
+                ) AS PAGE
+                LEFT OUTER JOIN (
+                    --Firefox ver38.0経由の不審な流入除外
+                    SELECT
+                        FULLVISITORID
+                    FROM
+                        TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
+                    WHERE
+                        DEVICE.LANGUAGE = 'en-us'
+                        AND DEVICE.BROWSER = 'Firefox'
+                        AND DEVICE.BROWSERVERSION = '38.0'
+                    GROUP EACH BY
+                        FULLVISITORID
+                ) AS EXCLUDE ON PAGE.FULLVISITORID = EXCLUDE.FULLVISITORID
                 WHERE
-                    TRAFFICSOURCE.SOURCE NOT IN ('ios', 'android')
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/app/') IS FALSE
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*\?app=1') IS FALSE
-                    AND HITS.TYPE = 'PAGE'
-                    AND HITS.ISENTRANCE IS TRUE
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*(((wo)*men|kids)-)*shop/[^/]+/')
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*(zozoused/)*(((wo)*men|kids|home)-)*(shop|brand|category)/(zozoused/(innerbrandlist|innershoplist|brand|news|category|$|\?|welcome|aboutsize|aboutcondition|default)|sizeguide(_.+)*\.html|request_mail\.html|innerbrandlist|innershoplist|default|\?|$|[^/]+/((no)*goods|requestnew|viewerHTML5\.html|viewerSimple\.html|(comingsoon|close)\.html))') IS FALSE--検索結果_ショップ
-            ) AS PAGE
+                    EXCLUDE.FULLVISITORID IS NULL
+            ) AS BOUNCE_BASE
             GROUP BY
                 BOUNCE_DT
                 ,BOUNCE_DEVICEID
@@ -351,6 +522,19 @@ FROM (
                 AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*(zozoused/)*(((wo)*men|kids|home)-)*(shop|brand|category)/(zozoused/(innerbrandlist|innershoplist|brand|news|category|$|\?|welcome|aboutsize|aboutcondition|default)|sizeguide(_.+)*\.html|request_mail\.html|innerbrandlist|innershoplist|default|\?|$|[^/]+/((no)*goods|requestnew|viewerHTML5\.html|viewerSimple\.html|(comingsoon|close)\.html))') IS FALSE--検索結果_ショップ
         ) AS PAGE
         LEFT OUTER JOIN (
+            --Firefox ver38.0経由の不審な流入除外
+            SELECT
+                FULLVISITORID
+            FROM
+                TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
+            WHERE
+                DEVICE.LANGUAGE = 'en-us'
+                AND DEVICE.BROWSER = 'Firefox'
+                AND DEVICE.BROWSERVERSION = '38.0'
+            GROUP EACH BY
+                FULLVISITORID
+        ) AS EXCLUDE ON PAGE.FULLVISITORID = EXCLUDE.FULLVISITORID
+        LEFT OUTER JOIN (
             SELECT
                 FULLVISITORID
                 ,VISITID
@@ -367,6 +551,8 @@ FROM (
                 ,VISITID
                 ,HITNUMBER
         ) AS ARIGATO ON PAGE.FULLVISITORID = ARIGATO.FULLVISITORID AND PAGE.VISITID = ARIGATO.VISITID
+        WHERE
+            EXCLUDE.FULLVISITORID IS NULL
         GROUP BY
             CV_DT
             ,CV_DEVICEID
@@ -401,21 +587,45 @@ FROM (
             FROM (
                 SELECT
                     VISITSTARTTIME
-                    ,FULLVISITORID
+                    ,PAGE.FULLVISITORID AS FULLVISITORID
                     ,VISITID
-                    ,HITS.HITNUMBER AS HITNUMBER
-                    ,CASE WHEN REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*') IS FALSE THEN 1 ELSE 2 END AS DEVICEID
-                    ,CONCAT(FULLVISITORID, STRING(VISITID), STRING(HITS.HITNUMBER)) AS UNIQUEID--閲覧回数分のレコードをカウントできるよう仮想IDをつくる
-                FROM
-                    TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
-                WHERE
-                    TRAFFICSOURCE.SOURCE NOT IN ('ios', 'android')
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/app/') IS FALSE
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*\?app=1') IS FALSE
-                    AND HITS.TYPE = 'PAGE'
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*(((wo)*men|kids)-)*brand/[^/]+/')
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*(zozoused/)*(((wo)*men|kids|home)-)*(shop|brand|category)/(zozoused/(innerbrandlist|innershoplist|brand|news|category|$|\?|welcome|aboutsize|aboutcondition|default)|sizeguide(_.+)*\.html|request_mail\.html|innerbrandlist|innershoplist|default|\?|$|[^/]+/((no)*goods|requestnew|viewerHTML5\.html|viewerSimple\.html|(comingsoon|close)\.html))') IS FALSE--検索結果_ブランド
-            ) AS PAGE
+                    ,HITNUMBER
+                    ,DEVICEID
+                    ,UNIQUEID
+                FROM (
+                    SELECT
+                        VISITSTARTTIME
+                        ,FULLVISITORID
+                        ,VISITID
+                        ,HITS.HITNUMBER AS HITNUMBER
+                        ,CASE WHEN REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*') IS FALSE THEN 1 ELSE 2 END AS DEVICEID
+                        ,CONCAT(FULLVISITORID, STRING(VISITID), STRING(HITS.HITNUMBER)) AS UNIQUEID--閲覧回数分のレコードをカウントできるよう仮想IDをつくる
+                    FROM
+                        TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
+                    WHERE
+                        TRAFFICSOURCE.SOURCE NOT IN ('ios', 'android')
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/app/') IS FALSE
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*\?app=1') IS FALSE
+                        AND HITS.TYPE = 'PAGE'
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*(((wo)*men|kids)-)*brand/[^/]+/')
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*(zozoused/)*(((wo)*men|kids|home)-)*(shop|brand|category)/(zozoused/(innerbrandlist|innershoplist|brand|news|category|$|\?|welcome|aboutsize|aboutcondition|default)|sizeguide(_.+)*\.html|request_mail\.html|innerbrandlist|innershoplist|default|\?|$|[^/]+/((no)*goods|requestnew|viewerHTML5\.html|viewerSimple\.html|(comingsoon|close)\.html))') IS FALSE--検索結果_ブランド
+                ) AS PAGE
+                LEFT OUTER JOIN (
+                    --Firefox ver38.0経由の不審な流入除外
+                    SELECT
+                        FULLVISITORID
+                    FROM
+                        TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
+                    WHERE
+                        DEVICE.LANGUAGE = 'en-us'
+                        AND DEVICE.BROWSER = 'Firefox'
+                        AND DEVICE.BROWSERVERSION = '38.0'
+                    GROUP EACH BY
+                        FULLVISITORID
+                ) AS EXCLUDE ON PAGE.FULLVISITORID = EXCLUDE.FULLVISITORID
+            WHERE
+                EXCLUDE.FULLVISITORID IS NULL
+            ) AS UU_BASE
         GROUP BY
             UU_DT
             ,UU_DEVICEID
@@ -431,20 +641,43 @@ FROM (
             FROM (
                 SELECT
                     VISITSTARTTIME
-                    ,CASE WHEN REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*') IS FALSE THEN 1 ELSE 2 END AS DEVICEID
-                    ,TOTALS.BOUNCES AS BOUNCE--直帰したセッションはここが1になる。その他はnull
-                    ,VISITNUMBER--このユーザーのセッション数
-                FROM
-                    TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
+                    ,DEVICEID
+                    ,BOUNCE
+                    ,VISITNUMBER
+                FROM (
+                    SELECT
+                        VISITSTARTTIME
+                        ,CASE WHEN REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*') IS FALSE THEN 1 ELSE 2 END AS DEVICEID
+                        ,TOTALS.BOUNCES AS BOUNCE--直帰したセッションはここが1になる。その他はnull
+                        ,VISITNUMBER--このユーザーのセッション数
+                        ,FULLVISITORID
+                    FROM
+                        TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
+                    WHERE
+                        TRAFFICSOURCE.SOURCE NOT IN ('ios', 'android')
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/app/') IS FALSE
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*\?app=1') IS FALSE
+                        AND HITS.TYPE = 'PAGE'
+                        AND HITS.ISENTRANCE IS TRUE
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*(((wo)*men|kids)-)*brand/[^/]+/')
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*(zozoused/)*(((wo)*men|kids|home)-)*(shop|brand|category)/(zozoused/(innerbrandlist|innershoplist|brand|news|category|$|\?|welcome|aboutsize|aboutcondition|default)|sizeguide(_.+)*\.html|request_mail\.html|innerbrandlist|innershoplist|default|\?|$|[^/]+/((no)*goods|requestnew|viewerHTML5\.html|viewerSimple\.html|(comingsoon|close)\.html))') IS FALSE--検索結果_ブランド
+                ) AS PAGE
+                LEFT OUTER JOIN (
+                    --Firefox ver38.0経由の不審な流入除外
+                    SELECT
+                        FULLVISITORID
+                    FROM
+                        TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
+                    WHERE
+                        DEVICE.LANGUAGE = 'en-us'
+                        AND DEVICE.BROWSER = 'Firefox'
+                        AND DEVICE.BROWSERVERSION = '38.0'
+                    GROUP EACH BY
+                        FULLVISITORID
+                ) AS EXCLUDE ON PAGE.FULLVISITORID = EXCLUDE.FULLVISITORID
                 WHERE
-                    TRAFFICSOURCE.SOURCE NOT IN ('ios', 'android')
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/app/') IS FALSE
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*\?app=1') IS FALSE
-                    AND HITS.TYPE = 'PAGE'
-                    AND HITS.ISENTRANCE IS TRUE
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*(((wo)*men|kids)-)*brand/[^/]+/')
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*(zozoused/)*(((wo)*men|kids|home)-)*(shop|brand|category)/(zozoused/(innerbrandlist|innershoplist|brand|news|category|$|\?|welcome|aboutsize|aboutcondition|default)|sizeguide(_.+)*\.html|request_mail\.html|innerbrandlist|innershoplist|default|\?|$|[^/]+/((no)*goods|requestnew|viewerHTML5\.html|viewerSimple\.html|(comingsoon|close)\.html))') IS FALSE--検索結果_ブランド
-            ) AS PAGE
+                    EXCLUDE.FULLVISITORID IS NULL
+            ) AS BOUNCE_BASE
             GROUP BY
                 BOUNCE_DT
                 ,BOUNCE_DEVICEID
@@ -474,6 +707,19 @@ FROM (
                 AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*(zozoused/)*(((wo)*men|kids|home)-)*(shop|brand|category)/(zozoused/(innerbrandlist|innershoplist|brand|news|category|$|\?|welcome|aboutsize|aboutcondition|default)|sizeguide(_.+)*\.html|request_mail\.html|innerbrandlist|innershoplist|default|\?|$|[^/]+/((no)*goods|requestnew|viewerHTML5\.html|viewerSimple\.html|(comingsoon|close)\.html))') IS FALSE--検索結果_ブランド
         ) AS PAGE
         LEFT OUTER JOIN (
+            --Firefox ver38.0経由の不審な流入除外
+            SELECT
+                FULLVISITORID
+            FROM
+                TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
+            WHERE
+                DEVICE.LANGUAGE = 'en-us'
+                AND DEVICE.BROWSER = 'Firefox'
+                AND DEVICE.BROWSERVERSION = '38.0'
+            GROUP EACH BY
+                FULLVISITORID
+        ) AS EXCLUDE ON PAGE.FULLVISITORID = EXCLUDE.FULLVISITORID
+        LEFT OUTER JOIN (
             SELECT
                 FULLVISITORID
                 ,VISITID
@@ -490,6 +736,8 @@ FROM (
                 ,VISITID
                 ,HITNUMBER
         ) AS ARIGATO ON PAGE.FULLVISITORID = ARIGATO.FULLVISITORID AND PAGE.VISITID = ARIGATO.VISITID
+        WHERE
+            EXCLUDE.FULLVISITORID IS NULL
         GROUP BY
             CV_DT
             ,CV_DEVICEID
@@ -524,21 +772,45 @@ FROM (
             FROM (
                 SELECT
                     VISITSTARTTIME
-                    ,FULLVISITORID
+                    ,PAGE.FULLVISITORID AS FULLVISITORID
                     ,VISITID
-                    ,HITS.HITNUMBER AS HITNUMBER
-                    ,CASE WHEN REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*') IS FALSE THEN 1 ELSE 2 END AS DEVICEID
-                    ,CONCAT(FULLVISITORID, STRING(VISITID), STRING(HITS.HITNUMBER)) AS UNIQUEID--閲覧回数分のレコードをカウントできるよう仮想IDをつくる
-                FROM
-                    TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
-                WHERE
-                    TRAFFICSOURCE.SOURCE NOT IN ('ios', 'android')
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/app/') IS FALSE
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*\?app=1') IS FALSE
-                    AND HITS.TYPE = 'PAGE'
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*(((wo)*men|kids)-)*category/[^/]+/')
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*(zozoused/)*(((wo)*men|kids|home)-)*(shop|brand|category)/(zozoused/(innerbrandlist|innershoplist|brand|news|category|$|\?|welcome|aboutsize|aboutcondition|default)|sizeguide(_.+)*\.html|request_mail\.html|innerbrandlist|innershoplist|default|\?|$|[^/]+/((no)*goods|requestnew|viewerHTML5\.html|viewerSimple\.html|(comingsoon|close)\.html))') IS FALSE--検索結果_カテゴリ
-            ) AS PAGE
+                    ,HITNUMBER
+                    ,DEVICEID
+                    ,UNIQUEID
+                FROM (
+                    SELECT
+                        VISITSTARTTIME
+                        ,FULLVISITORID
+                        ,VISITID
+                        ,HITS.HITNUMBER AS HITNUMBER
+                        ,CASE WHEN REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*') IS FALSE THEN 1 ELSE 2 END AS DEVICEID
+                        ,CONCAT(FULLVISITORID, STRING(VISITID), STRING(HITS.HITNUMBER)) AS UNIQUEID--閲覧回数分のレコードをカウントできるよう仮想IDをつくる
+                    FROM
+                        TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
+                    WHERE
+                        TRAFFICSOURCE.SOURCE NOT IN ('ios', 'android')
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/app/') IS FALSE
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*\?app=1') IS FALSE
+                        AND HITS.TYPE = 'PAGE'
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*(((wo)*men|kids)-)*category/[^/]+/')
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*(zozoused/)*(((wo)*men|kids|home)-)*(shop|brand|category)/(zozoused/(innerbrandlist|innershoplist|brand|news|category|$|\?|welcome|aboutsize|aboutcondition|default)|sizeguide(_.+)*\.html|request_mail\.html|innerbrandlist|innershoplist|default|\?|$|[^/]+/((no)*goods|requestnew|viewerHTML5\.html|viewerSimple\.html|(comingsoon|close)\.html))') IS FALSE--検索結果_カテゴリ
+                ) AS PAGE
+                LEFT OUTER JOIN (
+                    --Firefox ver38.0経由の不審な流入除外
+                    SELECT
+                        FULLVISITORID
+                    FROM
+                        TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
+                    WHERE
+                        DEVICE.LANGUAGE = 'en-us'
+                        AND DEVICE.BROWSER = 'Firefox'
+                        AND DEVICE.BROWSERVERSION = '38.0'
+                    GROUP EACH BY
+                        FULLVISITORID
+                ) AS EXCLUDE ON PAGE.FULLVISITORID = EXCLUDE.FULLVISITORID
+            WHERE
+                EXCLUDE.FULLVISITORID IS NULL
+            ) AS UU_BASE
         GROUP BY
             UU_DT
             ,UU_DEVICEID
@@ -554,20 +826,43 @@ FROM (
             FROM (
                 SELECT
                     VISITSTARTTIME
-                    ,CASE WHEN REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*') IS FALSE THEN 1 ELSE 2 END AS DEVICEID
-                    ,TOTALS.BOUNCES AS BOUNCE--直帰したセッションはここが1になる。その他はnull
-                    ,VISITNUMBER--このユーザーのセッション数
-                FROM
-                    TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
+                    ,DEVICEID
+                    ,BOUNCE
+                    ,VISITNUMBER
+                FROM (
+                    SELECT
+                        VISITSTARTTIME
+                        ,CASE WHEN REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*') IS FALSE THEN 1 ELSE 2 END AS DEVICEID
+                        ,TOTALS.BOUNCES AS BOUNCE--直帰したセッションはここが1になる。その他はnull
+                        ,VISITNUMBER--このユーザーのセッション数
+                        ,FULLVISITORID
+                    FROM
+                        TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
+                    WHERE
+                        TRAFFICSOURCE.SOURCE NOT IN ('ios', 'android')
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/app/') IS FALSE
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*\?app=1') IS FALSE
+                        AND HITS.TYPE = 'PAGE'
+                        AND HITS.ISENTRANCE IS TRUE
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*(((wo)*men|kids)-)*category/[^/]+/')
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*(zozoused/)*(((wo)*men|kids|home)-)*(shop|brand|category)/(zozoused/(innerbrandlist|innershoplist|brand|news|category|$|\?|welcome|aboutsize|aboutcondition|default)|sizeguide(_.+)*\.html|request_mail\.html|innerbrandlist|innershoplist|default|\?|$|[^/]+/((no)*goods|requestnew|viewerHTML5\.html|viewerSimple\.html|(comingsoon|close)\.html))') IS FALSE--検索結果_カテゴリ
+                ) AS PAGE
+                LEFT OUTER JOIN (
+                    --Firefox ver38.0経由の不審な流入除外
+                    SELECT
+                        FULLVISITORID
+                    FROM
+                        TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
+                    WHERE
+                        DEVICE.LANGUAGE = 'en-us'
+                        AND DEVICE.BROWSER = 'Firefox'
+                        AND DEVICE.BROWSERVERSION = '38.0'
+                    GROUP EACH BY
+                        FULLVISITORID
+                ) AS EXCLUDE ON PAGE.FULLVISITORID = EXCLUDE.FULLVISITORID
                 WHERE
-                    TRAFFICSOURCE.SOURCE NOT IN ('ios', 'android')
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/app/') IS FALSE
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*\?app=1') IS FALSE
-                    AND HITS.TYPE = 'PAGE'
-                    AND HITS.ISENTRANCE IS TRUE
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*(((wo)*men|kids)-)*category/[^/]+/')
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*(zozoused/)*(((wo)*men|kids|home)-)*(shop|brand|category)/(zozoused/(innerbrandlist|innershoplist|brand|news|category|$|\?|welcome|aboutsize|aboutcondition|default)|sizeguide(_.+)*\.html|request_mail\.html|innerbrandlist|innershoplist|default|\?|$|[^/]+/((no)*goods|requestnew|viewerHTML5\.html|viewerSimple\.html|(comingsoon|close)\.html))') IS FALSE--検索結果_カテゴリ
-            ) AS PAGE
+                    EXCLUDE.FULLVISITORID IS NULL
+            ) AS BOUNCE_BASE
             GROUP BY
                 BOUNCE_DT
                 ,BOUNCE_DEVICEID
@@ -597,6 +892,19 @@ FROM (
                 AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*(zozoused/)*(((wo)*men|kids|home)-)*(shop|brand|category)/(zozoused/(innerbrandlist|innershoplist|brand|news|category|$|\?|welcome|aboutsize|aboutcondition|default)|sizeguide(_.+)*\.html|request_mail\.html|innerbrandlist|innershoplist|default|\?|$|[^/]+/((no)*goods|requestnew|viewerHTML5\.html|viewerSimple\.html|(comingsoon|close)\.html))') IS FALSE--検索結果_カテゴリ
         ) AS PAGE
         LEFT OUTER JOIN (
+            --Firefox ver38.0経由の不審な流入除外
+            SELECT
+                FULLVISITORID
+            FROM
+                TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
+            WHERE
+                DEVICE.LANGUAGE = 'en-us'
+                AND DEVICE.BROWSER = 'Firefox'
+                AND DEVICE.BROWSERVERSION = '38.0'
+            GROUP EACH BY
+                FULLVISITORID
+        ) AS EXCLUDE ON PAGE.FULLVISITORID = EXCLUDE.FULLVISITORID
+        LEFT OUTER JOIN (
             SELECT
                 FULLVISITORID
                 ,VISITID
@@ -613,6 +921,8 @@ FROM (
                 ,VISITID
                 ,HITNUMBER
         ) AS ARIGATO ON PAGE.FULLVISITORID = ARIGATO.FULLVISITORID AND PAGE.VISITID = ARIGATO.VISITID
+        WHERE
+            EXCLUDE.FULLVISITORID IS NULL
         GROUP BY
             CV_DT
             ,CV_DEVICEID
@@ -647,21 +957,45 @@ FROM (
             FROM (
                 SELECT
                     VISITSTARTTIME
-                    ,FULLVISITORID
+                    ,PAGE.FULLVISITORID AS FULLVISITORID
                     ,VISITID
-                    ,HITS.HITNUMBER AS HITNUMBER
-                    ,CASE WHEN REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*') IS FALSE THEN 1 ELSE 2 END AS DEVICEID
-                    ,CONCAT(FULLVISITORID, STRING(VISITID), STRING(HITS.HITNUMBER)) AS UNIQUEID--閲覧回数分のレコードをカウントできるよう仮想IDをつくる
-                FROM
-                    TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
-                WHERE
-                    TRAFFICSOURCE.SOURCE NOT IN ('ios', 'android')
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/app/') IS FALSE
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*\?app=1') IS FALSE
-                    AND HITS.TYPE = 'PAGE'
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*(((wo)*men|kids)-)*search/')
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*(zozoused/)*(((wo)*men|kids|home)-)*(shop|brand|category)/(zozoused/(innerbrandlist|innershoplist|brand|news|category|$|\?|welcome|aboutsize|aboutcondition|default)|sizeguide(_.+)*\.html|request_mail\.html|innerbrandlist|innershoplist|default|\?|$|[^/]+/((no)*goods|requestnew|viewerHTML5\.html|viewerSimple\.html|(comingsoon|close)\.html))') IS FALSE--検索結果_その他
-            ) AS PAGE
+                    ,HITNUMBER
+                    ,DEVICEID
+                    ,UNIQUEID
+                FROM (
+                    SELECT
+                        VISITSTARTTIME
+                        ,FULLVISITORID
+                        ,VISITID
+                        ,HITS.HITNUMBER AS HITNUMBER
+                        ,CASE WHEN REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*') IS FALSE THEN 1 ELSE 2 END AS DEVICEID
+                        ,CONCAT(FULLVISITORID, STRING(VISITID), STRING(HITS.HITNUMBER)) AS UNIQUEID--閲覧回数分のレコードをカウントできるよう仮想IDをつくる
+                    FROM
+                        TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
+                    WHERE
+                        TRAFFICSOURCE.SOURCE NOT IN ('ios', 'android')
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/app/') IS FALSE
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*\?app=1') IS FALSE
+                        AND HITS.TYPE = 'PAGE'
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*(((wo)*men|kids)-)*search/')
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*(zozoused/)*(((wo)*men|kids|home)-)*(shop|brand|category)/(zozoused/(innerbrandlist|innershoplist|brand|news|category|$|\?|welcome|aboutsize|aboutcondition|default)|sizeguide(_.+)*\.html|request_mail\.html|innerbrandlist|innershoplist|default|\?|$|[^/]+/((no)*goods|requestnew|viewerHTML5\.html|viewerSimple\.html|(comingsoon|close)\.html))') IS FALSE--検索結果_その他
+                ) AS PAGE
+                LEFT OUTER JOIN (
+                    --Firefox ver38.0経由の不審な流入除外
+                    SELECT
+                        FULLVISITORID
+                    FROM
+                        TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
+                    WHERE
+                        DEVICE.LANGUAGE = 'en-us'
+                        AND DEVICE.BROWSER = 'Firefox'
+                        AND DEVICE.BROWSERVERSION = '38.0'
+                    GROUP EACH BY
+                        FULLVISITORID
+                ) AS EXCLUDE ON PAGE.FULLVISITORID = EXCLUDE.FULLVISITORID
+            WHERE
+                EXCLUDE.FULLVISITORID IS NULL
+            ) AS UU_BASE
         GROUP BY
             UU_DT
             ,UU_DEVICEID
@@ -677,20 +1011,43 @@ FROM (
             FROM (
                 SELECT
                     VISITSTARTTIME
-                    ,CASE WHEN REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*') IS FALSE THEN 1 ELSE 2 END AS DEVICEID
-                    ,TOTALS.BOUNCES AS BOUNCE--直帰したセッションはここが1になる。その他はnull
-                    ,VISITNUMBER--このユーザーのセッション数
-                FROM
-                    TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
+                    ,DEVICEID
+                    ,BOUNCE
+                    ,VISITNUMBER
+                FROM (
+                    SELECT
+                        VISITSTARTTIME
+                        ,CASE WHEN REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*') IS FALSE THEN 1 ELSE 2 END AS DEVICEID
+                        ,TOTALS.BOUNCES AS BOUNCE--直帰したセッションはここが1になる。その他はnull
+                        ,VISITNUMBER--このユーザーのセッション数
+                        ,FULLVISITORID
+                    FROM
+                        TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
+                    WHERE
+                        TRAFFICSOURCE.SOURCE NOT IN ('ios', 'android')
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/app/') IS FALSE
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*\?app=1') IS FALSE
+                        AND HITS.TYPE = 'PAGE'
+                        AND HITS.ISENTRANCE IS TRUE
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*(((wo)*men|kids)-)*search/')
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*(zozoused/)*(((wo)*men|kids|home)-)*(shop|brand|category)/(zozoused/(innerbrandlist|innershoplist|brand|news|category|$|\?|welcome|aboutsize|aboutcondition|default)|sizeguide(_.+)*\.html|request_mail\.html|innerbrandlist|innershoplist|default|\?|$|[^/]+/((no)*goods|requestnew|viewerHTML5\.html|viewerSimple\.html|(comingsoon|close)\.html))') IS FALSE--検索結果_その他
+                ) AS PAGE
+                LEFT OUTER JOIN (
+                    --Firefox ver38.0経由の不審な流入除外
+                    SELECT
+                        FULLVISITORID
+                    FROM
+                        TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
+                    WHERE
+                        DEVICE.LANGUAGE = 'en-us'
+                        AND DEVICE.BROWSER = 'Firefox'
+                        AND DEVICE.BROWSERVERSION = '38.0'
+                    GROUP EACH BY
+                        FULLVISITORID
+                ) AS EXCLUDE ON PAGE.FULLVISITORID = EXCLUDE.FULLVISITORID
                 WHERE
-                    TRAFFICSOURCE.SOURCE NOT IN ('ios', 'android')
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/app/') IS FALSE
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*\?app=1') IS FALSE
-                    AND HITS.TYPE = 'PAGE'
-                    AND HITS.ISENTRANCE IS TRUE
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*(((wo)*men|kids)-)*search/')
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*(zozoused/)*(((wo)*men|kids|home)-)*(shop|brand|category)/(zozoused/(innerbrandlist|innershoplist|brand|news|category|$|\?|welcome|aboutsize|aboutcondition|default)|sizeguide(_.+)*\.html|request_mail\.html|innerbrandlist|innershoplist|default|\?|$|[^/]+/((no)*goods|requestnew|viewerHTML5\.html|viewerSimple\.html|(comingsoon|close)\.html))') IS FALSE--検索結果_その他
-            ) AS PAGE
+                    EXCLUDE.FULLVISITORID IS NULL
+            ) AS BOUNCE_BASE
             GROUP BY
                 BOUNCE_DT
                 ,BOUNCE_DEVICEID
@@ -720,6 +1077,19 @@ FROM (
                 AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*(zozoused/)*(((wo)*men|kids|home)-)*(shop|brand|category)/(zozoused/(innerbrandlist|innershoplist|brand|news|category|$|\?|welcome|aboutsize|aboutcondition|default)|sizeguide(_.+)*\.html|request_mail\.html|innerbrandlist|innershoplist|default|\?|$|[^/]+/((no)*goods|requestnew|viewerHTML5\.html|viewerSimple\.html|(comingsoon|close)\.html))') IS FALSE--検索結果_その他
         ) AS PAGE
         LEFT OUTER JOIN (
+            --Firefox ver38.0経由の不審な流入除外
+            SELECT
+                FULLVISITORID
+            FROM
+                TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
+            WHERE
+                DEVICE.LANGUAGE = 'en-us'
+                AND DEVICE.BROWSER = 'Firefox'
+                AND DEVICE.BROWSERVERSION = '38.0'
+            GROUP EACH BY
+                FULLVISITORID
+        ) AS EXCLUDE ON PAGE.FULLVISITORID = EXCLUDE.FULLVISITORID
+        LEFT OUTER JOIN (
             SELECT
                 FULLVISITORID
                 ,VISITID
@@ -736,6 +1106,8 @@ FROM (
                 ,VISITID
                 ,HITNUMBER
         ) AS ARIGATO ON PAGE.FULLVISITORID = ARIGATO.FULLVISITORID AND PAGE.VISITID = ARIGATO.VISITID
+        WHERE
+            EXCLUDE.FULLVISITORID IS NULL
         GROUP BY
             CV_DT
             ,CV_DEVICEID
@@ -770,20 +1142,44 @@ FROM (
             FROM (
                 SELECT
                     VISITSTARTTIME
-                    ,FULLVISITORID
+                    ,PAGE.FULLVISITORID AS FULLVISITORID
                     ,VISITID
-                    ,HITS.HITNUMBER AS HITNUMBER
-                    ,CASE WHEN REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*') IS FALSE THEN 1 ELSE 2 END AS DEVICEID
-                    ,CONCAT(FULLVISITORID, STRING(VISITID), STRING(HITS.HITNUMBER)) AS UNIQUEID--閲覧回数分のレコードをカウントできるよう仮想IDをつくる
-                FROM
-                    TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
-                WHERE
-                    TRAFFICSOURCE.SOURCE NOT IN ('ios', 'android')
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/app/') IS FALSE
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*\?app=1') IS FALSE
-                    AND HITS.TYPE = 'PAGE'
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*shop/[^/]+/goods(-sale)*/\d+/(\?|$)') --商品詳細
-            ) AS PAGE
+                    ,HITNUMBER
+                    ,DEVICEID
+                    ,UNIQUEID
+                FROM (
+                    SELECT
+                        VISITSTARTTIME
+                        ,FULLVISITORID
+                        ,VISITID
+                        ,HITS.HITNUMBER AS HITNUMBER
+                        ,CASE WHEN REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*') IS FALSE THEN 1 ELSE 2 END AS DEVICEID
+                        ,CONCAT(FULLVISITORID, STRING(VISITID), STRING(HITS.HITNUMBER)) AS UNIQUEID--閲覧回数分のレコードをカウントできるよう仮想IDをつくる
+                    FROM
+                        TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
+                    WHERE
+                        TRAFFICSOURCE.SOURCE NOT IN ('ios', 'android')
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/app/') IS FALSE
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*\?app=1') IS FALSE
+                        AND HITS.TYPE = 'PAGE'
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*shop/[^/]+/goods(-sale)*/\d+/(\?|$)') --商品詳細
+                ) AS PAGE
+                LEFT OUTER JOIN (
+                    --Firefox ver38.0経由の不審な流入除外
+                    SELECT
+                        FULLVISITORID
+                    FROM
+                        TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
+                    WHERE
+                        DEVICE.LANGUAGE = 'en-us'
+                        AND DEVICE.BROWSER = 'Firefox'
+                        AND DEVICE.BROWSERVERSION = '38.0'
+                    GROUP EACH BY
+                        FULLVISITORID
+                ) AS EXCLUDE ON PAGE.FULLVISITORID = EXCLUDE.FULLVISITORID
+            WHERE
+                EXCLUDE.FULLVISITORID IS NULL
+            ) AS UU_BASE
         GROUP BY
             UU_DT
             ,UU_DEVICEID
@@ -799,19 +1195,42 @@ FROM (
             FROM (
                 SELECT
                     VISITSTARTTIME
-                    ,CASE WHEN REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*') IS FALSE THEN 1 ELSE 2 END AS DEVICEID
-                    ,TOTALS.BOUNCES AS BOUNCE--直帰したセッションはここが1になる。その他はnull
-                    ,VISITNUMBER--このユーザーのセッション数
-                FROM
-                    TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
+                    ,DEVICEID
+                    ,BOUNCE
+                    ,VISITNUMBER
+                FROM (
+                    SELECT
+                        VISITSTARTTIME
+                        ,CASE WHEN REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*') IS FALSE THEN 1 ELSE 2 END AS DEVICEID
+                        ,TOTALS.BOUNCES AS BOUNCE--直帰したセッションはここが1になる。その他はnull
+                        ,VISITNUMBER--このユーザーのセッション数
+                        ,FULLVISITORID
+                    FROM
+                        TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
+                    WHERE
+                        TRAFFICSOURCE.SOURCE NOT IN ('ios', 'android')
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/app/') IS FALSE
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*\?app=1') IS FALSE
+                        AND HITS.TYPE = 'PAGE'
+                        AND HITS.ISENTRANCE IS TRUE
+                        AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*shop/[^/]+/goods(-sale)*/\d+/(\?|$)') --商品詳細
+                ) AS PAGE
+                LEFT OUTER JOIN (
+                    --Firefox ver38.0経由の不審な流入除外
+                    SELECT
+                        FULLVISITORID
+                    FROM
+                        TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
+                    WHERE
+                        DEVICE.LANGUAGE = 'en-us'
+                        AND DEVICE.BROWSER = 'Firefox'
+                        AND DEVICE.BROWSERVERSION = '38.0'
+                    GROUP EACH BY
+                        FULLVISITORID
+                ) AS EXCLUDE ON PAGE.FULLVISITORID = EXCLUDE.FULLVISITORID
                 WHERE
-                    TRAFFICSOURCE.SOURCE NOT IN ('ios', 'android')
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/app/') IS FALSE
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/sp/.*\?app=1') IS FALSE
-                    AND HITS.TYPE = 'PAGE'
-                    AND HITS.ISENTRANCE IS TRUE
-                    AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*shop/[^/]+/goods(-sale)*/\d+/(\?|$)') --商品詳細
-            ) AS PAGE
+                    EXCLUDE.FULLVISITORID IS NULL
+            ) AS BOUNCE_BASE
             GROUP BY
                 BOUNCE_DT
                 ,BOUNCE_DEVICEID
@@ -840,6 +1259,19 @@ FROM (
                 AND REGEXP_MATCH(HITS.PAGE.PAGEPATH, R'^zozo\.jp/(sp/)*shop/[^/]+/goods(-sale)*/\d+/(\?|$)') --商品詳細
         ) AS PAGE
         LEFT OUTER JOIN (
+            --Firefox ver38.0経由の不審な流入除外
+            SELECT
+                FULLVISITORID
+            FROM
+                TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
+            WHERE
+                DEVICE.LANGUAGE = 'en-us'
+                AND DEVICE.BROWSER = 'Firefox'
+                AND DEVICE.BROWSERVERSION = '38.0'
+            GROUP EACH BY
+                FULLVISITORID
+        ) AS EXCLUDE ON PAGE.FULLVISITORID = EXCLUDE.FULLVISITORID
+        LEFT OUTER JOIN (
             SELECT
                 FULLVISITORID
                 ,VISITID
@@ -856,6 +1288,8 @@ FROM (
                 ,VISITID
                 ,HITNUMBER
         ) AS ARIGATO ON PAGE.FULLVISITORID = ARIGATO.FULLVISITORID AND PAGE.VISITID = ARIGATO.VISITID
+        WHERE
+            EXCLUDE.FULLVISITORID IS NULL
         GROUP BY
             CV_DT
             ,CV_DEVICEID
@@ -885,7 +1319,7 @@ FROM (
             SELECT
                 STRFTIME_UTC_USEC(VISITSTARTTIME * 1000000 + 32400000000, "%Y/%m/%d") AS UU_DT
                 ,DEVICEID AS UU_DEVICEID
-                ,EXACT_COUNT_DISTINCT(FULLVISITORID) AS UUCNT
+                ,EXACT_COUNT_DISTINCT(PAGE.FULLVISITORID) AS UUCNT
                 ,COUNT(UNIQUEID) AS PVCNT
             FROM (
                 SELECT
@@ -913,6 +1347,19 @@ FROM (
                     ,PAGEPATH
             ) AS PAGE
             LEFT OUTER JOIN (
+                --Firefox ver38.0経由の不審な流入除外
+                SELECT
+                    FULLVISITORID
+                FROM
+                    TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
+                WHERE
+                    DEVICE.LANGUAGE = 'en-us'
+                    AND DEVICE.BROWSER = 'Firefox'
+                    AND DEVICE.BROWSERVERSION = '38.0'
+                GROUP EACH BY
+                    FULLVISITORID
+            ) AS EXCLUDEUSER ON PAGE.FULLVISITORID = EXCLUDEUSER.FULLVISITORID
+            LEFT OUTER JOIN (
                 --SAP_PAGECATEGORYID1～7に分類されているページは除外する
                 SELECT
                     HITS.PAGE.PAGEPATH AS PAGEPATH
@@ -931,7 +1378,8 @@ FROM (
                     PAGEPATH
             ) AS EXCLUDE ON PAGE.PAGEPATH = EXCLUDE.PAGEPATH
         WHERE
-            EXCLUDE.PAGEPATH IS NULL--EXCLUDEに含まれないページ
+            EXCLUDEUSER.FULLVISITORID IS NULL
+            AND EXCLUDE.PAGEPATH IS NULL--EXCLUDEに含まれないページ
         GROUP BY
             UU_DT
             ,UU_DEVICEID
@@ -951,6 +1399,7 @@ FROM (
                     ,TOTALS.BOUNCES AS BOUNCE--直帰したセッションはここが1になる。その他はnull
                     ,VISITNUMBER--このユーザーのセッション数
                     ,HITS.PAGE.PAGEPATH AS PAGEPATH
+                    ,FULLVISITORID
                 FROM
                     TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
                 WHERE
@@ -965,7 +1414,21 @@ FROM (
                     ,BOUNCE
                     ,VISITNUMBER
                     ,PAGEPATH
+                    ,FULLVISITORID
             ) AS PAGE
+            LEFT OUTER JOIN (
+                --Firefox ver38.0経由の不審な流入除外
+                SELECT
+                    FULLVISITORID
+                FROM
+                    TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
+                WHERE
+                    DEVICE.LANGUAGE = 'en-us'
+                    AND DEVICE.BROWSER = 'Firefox'
+                    AND DEVICE.BROWSERVERSION = '38.0'
+                GROUP EACH BY
+                    FULLVISITORID
+            ) AS EXCLUDEUSER ON PAGE.FULLVISITORID = EXCLUDEUSER.FULLVISITORID
             LEFT OUTER JOIN (
                 --SAP_PAGECATEGORYID1～7に分類されているページは除外する
                 SELECT
@@ -985,7 +1448,8 @@ FROM (
                     PAGEPATH
             ) AS EXCLUDE ON PAGE.PAGEPATH = EXCLUDE.PAGEPATH
             WHERE
-                EXCLUDE.PAGEPATH IS NULL--EXCLUDEに含まれないページ
+                EXCLUDEUSER.FULLVISITORID IS NULL
+                AND EXCLUDE.PAGEPATH IS NULL--EXCLUDEに含まれないページ
             GROUP BY
                 BOUNCE_DT
                 ,BOUNCE_DEVICEID
@@ -1020,6 +1484,19 @@ FROM (
                 ,DEVICEID
                 ,PAGEPATH
         ) AS PAGE
+        LEFT OUTER JOIN (
+            --Firefox ver38.0経由の不審な流入除外
+            SELECT
+                FULLVISITORID
+            FROM
+                TABLE_DATE_RANGE([109049626.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))
+            WHERE
+                DEVICE.LANGUAGE = 'en-us'
+                AND DEVICE.BROWSER = 'Firefox'
+                AND DEVICE.BROWSERVERSION = '38.0'
+            GROUP EACH BY
+                FULLVISITORID
+        ) AS EXCLUDEUSER ON PAGE.FULLVISITORID = EXCLUDEUSER.FULLVISITORID
         LEFT OUTER JOIN (
             --SAP_PAGECATEGORYID1～7に分類されているページは除外する
             SELECT
@@ -1056,7 +1533,8 @@ FROM (
                 ,HITNUMBER
         ) AS ARIGATO ON PAGE.FULLVISITORID = ARIGATO.FULLVISITORID AND PAGE.VISITID = ARIGATO.VISITID
         WHERE
-            EXCLUDE.PAGEPATH IS NULL--EXCLUDEに含まれないページ
+            EXCLUDEUSER.FULLVISITORID IS NULL
+            AND EXCLUDE.PAGEPATH IS NULL--EXCLUDEに含まれないページ
         GROUP BY
             CV_DT
             ,CV_DEVICEID
