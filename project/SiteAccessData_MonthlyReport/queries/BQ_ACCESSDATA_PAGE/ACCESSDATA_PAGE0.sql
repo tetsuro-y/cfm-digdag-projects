@@ -30,7 +30,7 @@ FROM (
             FROM
                 TABLE_DATE_RANGE([90402834.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))--iOS
             WHERE
-                REGEXP_MATCH(HITS.APPINFO.SCREENNAME, R'^home/(((wo)*men|kids)/)*(\?|$)')
+                REGEXP_MATCH(HITS.APPINFO.SCREENNAME, R'^home/(\d/)*(((wo)*men|kids)/)*(\?|$)')
                 AND HITS.APPINFO.APPVERSION >= '5.4.0'
         ),
         (
@@ -56,7 +56,7 @@ FROM (
             FROM
                 TABLE_DATE_RANGE([90303901.ga_sessions_],DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'MONTH'), DATE_ADD(TIMESTAMP(FORMAT_UTC_USEC(UTC_USEC_TO_MONTH(NOW()))), -1, 'DAY'))--Android
             WHERE
-                REGEXP_MATCH(HITS.APPINFO.SCREENNAME, R'^home/(((wo)*men|kids)/)*(\?|$)')
+                REGEXP_MATCH(HITS.APPINFO.SCREENNAME, R'^home/(\d/)*(((wo)*men|kids)/)*(\?|$)')
                 AND HITS.APPINFO.APPVERSION >= '5.0.0'
         ),
         (
