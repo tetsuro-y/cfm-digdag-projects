@@ -58,8 +58,14 @@ SELECT
     ,VD_VISIT_TOTAL                                        AS RTR_CNT_CLICK_ALL
     ,NULL                                                 AS RTR_CNT_CLICK_PC
     ,NULL                                                 AS RTR_CNT_CLICK_MO
+    ,NVL(VD_CV_TOTAL, 0)                                   AS RTR_CNT_CV_ALL
+    ,NULL                                                 AS RTR_CNT_CV_PC
+    ,NULL                                                 AS RTR_CNT_CV_MO
     ,NULL                                                 AS RTR_RATE_CLICK_PER_OPEN_PC
-    ,NULL                                                 AS RTR_RATE_CLICK_PER_OPEN_MO
+    ,NULL                                                 AS RTR_RATE_CLICK_PER_SEND_MO
+    ,ROUND(100.0 * VD_CV_TOTAL / VD_VISIT_TOTAL, 2)        AS RTR_RATE_CV_PER_CLICK_ALL
+    ,NULL                                                 AS RTR_RATE_CV_PER_CLICK_PC
+    ,NULL                                                 AS RTR_RATE_CV_PER_CLICK_MO
     ,VD_REVENUE_TOTAL                                      AS RTR_REVENUE_TOTAL_ALL
     ,NULL                                                 AS RTR_REVENUE_TOTAL_PC
     ,NULL                                                 AS RTR_REVENUE_TOTAL_MO
@@ -100,6 +106,7 @@ FROM (
             ,HVU_CAMPAIGNID AS VD_CAMPAIGNID
             ,HVU_CHANNELID AS VD_CHANNELID
             ,COUNT(HVU_FULLVISITORID) AS VD_VISIT_TOTAL
+            ,COUNT(HVU_FULLVISITORID_CV) AS VD_CV_TOTAL
             ,SUM(HVU_REVENUE) AS VD_REVENUE_TOTAL
         FROM
             TAT_DB_HISTORY_VISIT_USER
