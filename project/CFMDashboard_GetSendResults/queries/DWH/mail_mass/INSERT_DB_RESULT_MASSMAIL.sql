@@ -138,6 +138,7 @@ FROM (
                 AND HVU_SENDDT < CAST('${pd_base_date}' AS TIMESTAMP)
                 AND HVU_CHANNELID = 1
                 AND HVU_CHANNEL_DETAILID = 2
+                AND HVU_VISITTIME >= HVU_SENDDT::TIMESTAMP
             GROUP BY
                 HVU_SENDDT
                 ,HVU_CAMPAIGNID
