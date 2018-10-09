@@ -188,6 +188,7 @@ FROM (
         HVU_CHANNELID = 3 /* PUSH */
         AND HVU_SENDDT >= '${pd_base_date}'::DATE + INTERVAL '-8DAYS'
         AND HVU_SENDDT < '${pd_base_date}'::DATE
+        AND HVU_VISITTIME >= HVU_SENDDT::TIMESTAMP
     GROUP BY
         CC_CLICKDT
         ,CC_OSID
