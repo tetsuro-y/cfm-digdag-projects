@@ -54,7 +54,7 @@ if [ ${count} -ne 0 ]; then
                     NEW_WORKFLOW_SESSION=$(echo ${result} | egrep -o "session id: [0-9]+" | cut -d' ' -f3)
 
                     message="{\"title\":\"Command\", \"value\":\" \`\`\` $(echo ${body} | sed 's/"/\\\"/g') \`\`\` \", \"short\":false}, {\"title\":\"起動したWORKFLOW\", \"value\":\"http://${DIGDAGSERVER_HOST}/sessions/${WORKFLOW_SESSION}\", \"short\":false}, {\"title\":\"実行するWORKFLOW\", \"value\":\"http://${DIGDAGSERVER_HOST}/sessions/${NEW_WORKFLOW_SESSION}\", \"short\":false}, {\"title\":\"DATETIME\", \"value\":\"${execution_time}\", \"short\":true}"
-                    payload="{\"text\":\"*JP1からのdigdag startを実行しました*\", \"channel\":\"#cfm_science_team\",\"username\":\"DIGDAG Task Starter\", \"attachments\":[{\"color\":\"good\",\"fields\":[${message}],\"mrkdwn_in\":[\"fields\", \"text\"]}]}"
+                    payload="{\"text\":\"*JP1からのdigdag startを実行しました*\", \"channel\":\"#cfm_system_alert\",\"username\":\"DIGDAG Task Starter\", \"attachments\":[{\"color\":\"good\",\"fields\":[${message}],\"mrkdwn_in\":[\"fields\", \"text\"]}]}"
 
 
                     # send slack message

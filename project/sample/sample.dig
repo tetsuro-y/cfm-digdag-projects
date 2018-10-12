@@ -32,7 +32,7 @@ _export:
 
   slack:
     webhook: https://hooks.slack.com/services/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
-    channel: '#cfm_science_team'
+    channel: '#cfm_system_alert'
     username: digdag
     icon_emoji: ghost
     template_path: notification
