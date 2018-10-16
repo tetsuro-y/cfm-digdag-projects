@@ -279,7 +279,7 @@ INNER JOIN (
 
 UNION ALL
 
-/* 新着おまとめ  配信数,流入数, 経由売上 */
+/* 新着おまとめ  配信数,流入数, CV数, 経由売上 */
 SELECT
     NSSD_SENDDT
     ,NSCD_CHANNEL_DETAILID
@@ -324,7 +324,7 @@ INNER JOIN (
 
 UNION ALL
 
-/* 新着リアルタイム  配信数,流入数, 経由売上 */
+/* 新着リアルタイム  配信数,流入数, CV数, 経由売上 */
 SELECT
     NRSD_SENDDT
     ,NRCD_CHANNEL_DETAILID
@@ -369,7 +369,7 @@ INNER JOIN (
 
 UNION ALL
 
-/* パーソナライズPUSH  配信数,流入数, 経由売上 */
+/* パーソナライズPUSH  配信数,流入数, CV数, 経由売上 */
 SELECT
     PSD_SENDDT
     ,PCD_CHANNEL_DETAILID
